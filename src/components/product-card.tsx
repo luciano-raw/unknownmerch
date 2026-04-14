@@ -38,7 +38,6 @@ export function ProductCard({ product }: { product: ProductType }) {
       onDragStart={(e) => e.preventDefault()}
     >
       <Link href={`/product/${product.id}`} className="block overflow-hidden relative aspect-square bg-zinc-900">
-        <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors z-10" />
         {product.images.map((image: string, index: number) => (
           <div
             key={index}
