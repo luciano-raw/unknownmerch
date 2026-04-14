@@ -37,8 +37,8 @@ export function ProductCard({ product }: { product: ProductType }) {
       onContextMenu={(e) => e.preventDefault()}
       onDragStart={(e) => e.preventDefault()}
     >
-      <Link href={`/product/${product.id}`} className="block overflow-hidden relative aspect-square">
-        <div className="absolute inset-0 bg-secondary/20 group-hover:bg-transparent transition-colors z-10" />
+      <Link href={`/product/${product.id}`} className="block overflow-hidden relative aspect-square bg-zinc-900">
+        <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors z-10" />
         {product.images.map((image: string, index: number) => (
           <div
             key={index}
@@ -52,7 +52,7 @@ export function ProductCard({ product }: { product: ProductType }) {
         {/* Anti-Theft Watermark Overlay for Cards */}
         <div 
           className="absolute inset-0 pointer-events-none z-10 opacity-[0.04]" 
-          style={{ backgroundImage: `url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" transform="rotate(-25)"><text x="-20" y="100" font-family="sans-serif" font-size="20" fill="currentColor" font-weight="900">UNKNOWN CLUB</text></svg>')`, backgroundRepeat: 'repeat' }} 
+          style={{ backgroundImage: `url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" transform="rotate(-25)"><text x="-20" y="100" font-family="sans-serif" font-size="20" fill="white" font-weight="900">UNKNOWN CLUB</text></svg>')`, backgroundRepeat: 'repeat' }} 
         />
         {isOutOfStock && (
           <div className="absolute top-3 left-3 z-10">

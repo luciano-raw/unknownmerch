@@ -22,7 +22,7 @@ export function ProductGallery({ images }: { images: string[] }) {
     <div className="flex flex-col gap-4 h-[500px] w-full">
       {/* Featured Main Image */}
       <div 
-        className={`flex-1 w-full relative bg-secondary rounded-2xl overflow-hidden border select-none ${isZooming ? 'cursor-zoom-in' : 'cursor-crosshair'} touch-none`}
+        className={`flex-1 w-full relative bg-zinc-900 rounded-2xl overflow-hidden border-none select-none ${isZooming ? 'cursor-zoom-in' : 'cursor-crosshair'} touch-none`}
         onMouseEnter={() => setIsZooming(true)}
         onMouseLeave={() => setIsZooming(false)}
         onMouseMove={handleMouseMove}
@@ -49,8 +49,8 @@ export function ProductGallery({ images }: { images: string[] }) {
 
         {/* Anti-Theft Watermark Overlay */}
         <div 
-          className="absolute inset-0 pointer-events-none z-10 opacity-[0.06]" 
-          style={{ backgroundImage: `url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" transform="rotate(-25)"><text x="0" y="150" font-family="sans-serif" font-size="28" fill="black" font-weight="900">UNKNOWN CLUB</text></svg>')`, backgroundRepeat: 'repeat' }} 
+          className="absolute inset-0 pointer-events-none z-10 opacity-[0.05]" 
+          style={{ backgroundImage: `url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" transform="rotate(-25)"><text x="0" y="150" font-family="sans-serif" font-size="28" fill="white" font-weight="900">UNKNOWN CLUB</text></svg>')`, backgroundRepeat: 'repeat' }} 
         />
       </div>
 
@@ -61,7 +61,7 @@ export function ProductGallery({ images }: { images: string[] }) {
             <button
               key={index}
               onClick={() => setCurrentIndex(index)}
-              className={`relative w-24 h-24 shrink-0 rounded-xl overflow-hidden border-2 transition-colors ${
+              className={`relative w-24 h-24 shrink-0 rounded-xl overflow-hidden border-2 transition-colors bg-zinc-900 ${
                 index === currentIndex ? "border-primary opacity-100" : "border-transparent opacity-60 hover:opacity-100"
               }`}
             >
