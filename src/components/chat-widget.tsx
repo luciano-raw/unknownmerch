@@ -90,7 +90,7 @@ export function ChatWidget() {
                   <Sparkles className="h-5 w-5" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-sm leading-none">Asistente FerLu</h3>
+                  <h3 className="font-bold text-sm leading-none">UNKNOWN IA</h3>
                   <span className="text-[10px] opacity-80">En línea ahora ✨</span>
                 </div>
               </div>
@@ -112,8 +112,8 @@ export function ChatWidget() {
                   <div className="bg-primary/10 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4">
                     <Bot className="h-6 w-6 text-primary" />
                   </div>
-                  <p className="text-sm font-bold text-foreground">¡Hola! Soy tu asistente de FerLu Store.</p>
-                  <p className="text-xs text-muted-foreground">¿En qué puedo ayudarte hoy? Consultas sobre productos, envíos o rutinas.</p>
+                  <p className="text-sm font-bold text-foreground">¡Hola! Soy la voz oficial de Unknown Club.</p>
+                  <p className="text-xs text-muted-foreground">¿En qué puedo orientarte hoy? Sobre banners, merch exclusivo, accesorios o nuestra cultura.</p>
                 </div>
               )}
               
@@ -128,8 +128,8 @@ export function ChatWidget() {
                     </div>
                     <div className={`p-3 rounded-2xl text-sm shadow-sm break-words min-w-[50px] min-h-[40px] max-w-[85%] ${
                       m.role === "user" 
-                        ? "bg-primary text-white rounded-tr-none ml-auto" 
-                        : "bg-slate-900 text-slate-100 border border-slate-800 rounded-tl-none mr-auto shadow-lg"
+                        ? "bg-primary text-primary-foreground rounded-tr-none ml-auto" 
+                        : "bg-secondary text-secondary-foreground border border-border rounded-tl-none mr-auto shadow-lg"
                     }`}>
                       {m.role === "user" ? (
                         <div className="whitespace-pre-wrap">{m.content}</div>
@@ -149,8 +149,8 @@ export function ChatWidget() {
                               </a>
                             ),
                             ul: ({children}: any) => <ul className="list-disc ml-4 my-1 space-y-0.5">{children}</ul>,
-                            li: ({children}: any) => <li className="text-zinc-300">{children}</li>,
-                            strong: ({children}: any) => <strong className="text-white font-bold">{children}</strong>
+                            li: ({children}: any) => <li className="text-secondary-foreground/80">{children}</li>,
+                            strong: ({children}: any) => <strong className="text-foreground font-bold">{children}</strong>
                           }}
                         >
                           {m.content || "..."}
