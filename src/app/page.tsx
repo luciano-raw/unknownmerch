@@ -8,9 +8,6 @@ const prisma = new PrismaClient()
 
 export default async function Home() {
   const latestProducts = await prisma.product.findMany({
-    where: {
-      category: { not: 'joyas' }
-    },
     orderBy: { createdAt: 'desc' },
     take: 8
   })
@@ -75,7 +72,7 @@ export default async function Home() {
 
           <div className="mt-12 flex justify-center">
             <Link 
-              href="/category/capilares_corporales" 
+              href="/category/all" 
               className="inline-flex h-12 items-center justify-center rounded-full border-2 border-primary bg-transparent px-8 text-base font-bold text-primary shadow-sm transition-all hover:bg-primary hover:text-primary-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring hover:scale-105 active:scale-95"
             >
               Ver todos los productos

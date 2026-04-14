@@ -62,12 +62,17 @@ export default function CartPage() {
           <div className="grid md:grid-cols-3 gap-8">
             <div className="col-span-2 space-y-4">
               {items.map((item) => (
-                <div key={item.id} className="flex gap-4 border rounded-lg p-4 items-center bg-card shadow-sm">
+                <div key={item.cartItemId || item.id} className="flex gap-4 border rounded-lg p-4 items-center bg-card shadow-sm">
                   <div className="w-20 h-20 bg-secondary rounded-md overflow-hidden shrink-0">
                     <img src={item.images[0]} alt={item.name} className="w-full h-full object-cover" />
                   </div>
                   <div className="flex-1">
                     <h3 className="font-semibold text-lg line-clamp-1">{item.name}</h3>
+                    {item.selectedVariant && (
+                      <span className="text-xs font-bold text-muted-foreground bg-secondary px-2 py-0.5 rounded-full inline-block mt-1 mb-1">
+                        Variante: {item.selectedVariant}
+                      </span>
+                    )}
                     {mounted && vipDiscount > 0 ? (
                       <div className="flex flex-col">
                         <span className="font-bold text-primary">${(item.price * (1 - vipDiscount / 100)).toLocaleString("es-CL")}</span>
@@ -79,21 +84,21 @@ export default function CartPage() {
                   </div>
                   <div className="flex items-center gap-3">
                     <button 
-                      onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                      onClick={() => updateQuantity(item.cartItemId || item.id, item.quantity - 1)}
                       className="p-1 rounded-full bg-secondary text-secondary-foreground hover:bg-muted"
                     >
                       <Minus className="w-4 h-4" />
                     </button>
                     <span className="w-4 text-center">{item.quantity}</span>
                     <button 
-                      onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                      onClick={() => updateQuantity(item.cartItemId || item.id, item.quantity + 1)}
                       className="p-1 rounded-full bg-secondary text-secondary-foreground hover:bg-muted"
                     >
                       <Plus className="w-4 h-4" />
                     </button>
                   </div>
                   <button 
-                    onClick={() => removeItem(item.id)}
+                    onClick={() => removeItem(item.cartItemId || item.id)}
                     className="p-2 text-destructive hover:bg-destructive/10 rounded-full transition-colors"
                   >
                     <Trash2 className="w-5 h-5" />

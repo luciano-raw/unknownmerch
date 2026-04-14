@@ -88,9 +88,39 @@ export default async function ProductDetailPage({
               
               <div className="mt-8 pt-6 border-t space-y-4">
                 {product.shippingDetails && (
-                  <div className="p-4 bg-secondary/30 rounded-lg">
-                    <h3 className="text-sm font-bold mb-1">Información de Envío/Retiro</h3>
-                    <p className="text-sm text-foreground/80">{product.shippingDetails}</p>
+                  <div className="p-5 bg-secondary/20 rounded-xl border border-secondary/30">
+                    <h3 className="text-base font-bold mb-3 flex items-center gap-2">
+                      <span className="w-1.5 h-4 bg-primary rounded-full"></span>
+                      Envío y Retiro
+                    </h3>
+                    {(() => {
+                      try {
+                        const data = JSON.parse(product.shippingDetails);
+                        return (
+                          <div className="text-sm text-foreground/90 space-y-2">
+                            {data.type === "solo_envio" && <p className="flex items-center gap-2">📦 Solo Envío a Domicilio / Agencia</p>}
+                            {data.type === "solo_retiro" && <p className="flex items-center gap-2">🏪 Solo Retiro Presencial</p>}
+                            {data.type === "envio_y_retiro" && <p className="flex items-center gap-2">🚚 Envíos a todo Chile y Retiro Local</p>}
+                            
+                            {data.locations && data.locations.length > 0 && (
+                              <div className="mt-3 pt-3 border-t border-border/50">
+                                <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground block mb-2">Puntos de retiro disponibles:</span>
+                                <div className="flex flex-wrap gap-2">
+                                  {data.locations.map((loc: string) => (
+                                    <span key={loc} className="px-2 py-1 bg-primary/10 text-primary border border-primary/20 rounded-md text-xs font-bold">
+                                      {loc}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )
+                      } catch (e) {
+                        // Fallback fallback if it's not JSON
+                        return <p className="text-sm text-foreground/80">{product.shippingDetails}</p>
+                      }
+                    })()}
                   </div>
                 )}
                 

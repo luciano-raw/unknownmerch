@@ -16,7 +16,8 @@ export function generateWhatsAppLink(items: CartItem[], customerName: string, vi
     total += subtotal
     
     // Formato tipo boleta o voucher para fácil lectura
-    message += `🔸 *${item.quantity}x* ${item.name}\n`
+    const variantStr = item.selectedVariant ? ` [Variante: ${item.selectedVariant}]` : ''
+    message += `🔸 *${item.quantity}x* ${item.name}${variantStr}\n`
     message += `   ↳ Precio: $${item.price.toLocaleString("es-CL")} c/u\n`
     message += `   ↳ Subtotal: $${subtotal.toLocaleString("es-CL")}\n`
     message += `-------------------------------------------------\n`

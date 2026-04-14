@@ -22,7 +22,7 @@ model Product {
   name             String
   description      String
   price            Float
-  category         String   // "capilares_corporales" or "joyas"
+  category         String   // "stickers", "apparel" or "accessories"
   images           String[]
   specifications   Json?    
   shippingDetails  String?

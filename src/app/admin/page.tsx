@@ -14,7 +14,7 @@ export default function AdminDashboardPage() {
             </div>
             <h2 className="text-xl font-bold mb-2">Productos</h2>
             <p className="text-muted-foreground mb-4">
-              Gestiona el catálogo de capilares y cuidado personal. Añade imágenes y precios.
+              Gestiona el catálogo de stickers, apparel y accesorios. Añade imágenes y precios.
             </p>
             <Link href="/admin/products" className="block text-center w-full py-2 bg-secondary text-secondary-foreground font-medium rounded-md hover:bg-secondary/80 transition-colors">
               Gestionar

@@ -11,11 +11,19 @@ export default async function CategoryPage({
   const { slug } = await params
 
   // Define category UI text
-  const isJewelry = slug === "joyas"
-  const title = isJewelry ? "Joyas Elegantes" : "Cuidado Capilar y Corporal"
-  const description = isJewelry
-    ? "Descubre nuestra colección de anillos, pulseras y cadenas exclusivas."
-    : "Lo mejor para tu piel y cabello, resaltando tu belleza natural."
+  let title = "Categoría"
+  let description = "Explora nuestros mejores productos."
+  
+  if (slug === "stickers") {
+    title = "Stickers & Banners"
+    description = "Pega tu estilo en cualquier parte. Calidad premium para exterior."
+  } else if (slug === "apparel") {
+    title = "Apparel"
+    description = "Streetwear de primer nivel enfocado a la estética minimalista y tuerca."
+  } else if (slug === "accessories") {
+    title = "Car Accessories"
+    description = "Pomos, cofias, aromatizantes, tapas de válvulas y complementos."
+  }
 
   // Fetch from Prisma Database
   const products = await prisma.product.findMany({ 

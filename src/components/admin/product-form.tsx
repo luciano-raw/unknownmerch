@@ -13,6 +13,37 @@ export function ProductForm({ initialData }: { initialData?: any }) {
   const [existingImages, setExistingImages] = useState<string[]>(initialData?.images || [])
   const [existingCoverIndex, setExistingCoverIndex] = useState<number>(0)
   
+  const [shippingType, setShippingType] = useState<string>("envio_y_retiro")
+  const [shippingLocations, setShippingLocations] = useState<string[]>([])
+  const [variantsText, setVariantsText] = useState<string>("")
+
+  useEffect(() => {
+    if (initialData?.shippingDetails) {
+      try {
+        const parsed = JSON.parse(initialData.shippingDetails)
+        if (parsed.type) setShippingType(parsed.type)
+        if (parsed.locations) setShippingLocations(parsed.locations)
+      } catch (e) {
+        // Old string fallback
+      }
+    }
+    
+    if (initialData?.specifications) {
+      try {
+        const specs = typeof initialData.specifications === 'string' ? JSON.parse(initialData.specifications) : initialData.specifications
+        if (specs && Array.isArray(specs.variants) && specs.variants.length > 0) {
+          setVariantsText(specs.variants.join(", "))
+        }
+      } catch(e) {}
+    }
+  }, [initialData])
+
+  const handleLocationToggle = (loc: string) => {
+    setShippingLocations(prev => 
+      prev.includes(loc) ? prev.filter(l => l !== loc) : [...prev, loc]
+    )
+  }
+  
   const router = useRouter()
 
   // Clean memory leaks
@@ -35,11 +66,31 @@ export function ProductForm({ initialData }: { initialData?: any }) {
   async function handleAction(rawFormData: FormData) {
     setLoading(true)
     try {
-      // Intercept and restructure FormData to enforce Cover logic
       const finalFormData = new FormData()
       rawFormData.forEach((value, key) => {
-        if (key !== "images") finalFormData.append(key, value)
+        if (key !== "images" && key !== "shippingDetails") finalFormData.append(key, value)
       })
+
+      // Append Shipping Data
+      const shippingData = {
+        type: shippingType,
+        locations: (shippingType === "solo_retiro" || shippingType === "envio_y_retiro") ? shippingLocations : []
+      }
+      finalFormData.append("shippingDetails", JSON.stringify(shippingData))
+
+      // Append Specifications / Variants
+      let specsObj: any = {}
+      if (initialData?.specifications) {
+        try {
+          specsObj = typeof initialData.specifications === 'string' ? JSON.parse(initialData.specifications) : initialData.specifications
+        } catch(e) {}
+      }
+      if (variantsText.trim()) {
+        specsObj.variants = variantsText.split(",").map(v => v.trim()).filter(Boolean)
+      } else {
+        delete specsObj.variants
+      }
+      finalFormData.append("specifications", JSON.stringify(specsObj))
 
       if (selectedFiles.length > 0) {
         // Enforce the cover image is at index 0
@@ -92,9 +143,10 @@ export function ProductForm({ initialData }: { initialData?: any }) {
 
       <div>
         <label className="block text-sm font-medium mb-1">Categoría</label>
-        <select name="category" required className="w-full rounded-md border border-input bg-background px-3 py-2 h-10" defaultValue={initialData?.category || "capilares_corporales"}>
-          <option value="capilares_corporales">Capilares y Cuidado Corporal</option>
-          <option value="joyas">Joyas</option>
+        <select name="category" required className="w-full rounded-md border border-input bg-background px-3 py-2 h-10" defaultValue={initialData?.category || "apparel"}>
+          <option value="stickers">Stickers & Banners</option>
+          <option value="apparel">Apparel</option>
+          <option value="accessories">Car Accessories</option>
         </select>
       </div>
 
@@ -104,8 +156,51 @@ export function ProductForm({ initialData }: { initialData?: any }) {
       </div>
 
       <div>
-        <label className="block text-sm font-medium mb-1">Detalles de Envío o Retiro</label>
-        <textarea name="shippingDetails" rows={2} placeholder="Ej: Retiro en tienda local disponible el mismo día. Envíos nacionales por pagar." className="w-full rounded-md border border-input bg-background px-3 py-2" defaultValue={initialData?.shippingDetails || ""} />
+        <label className="block text-sm font-medium mb-1 text-primary">Opciones de Variante/Material (Opcional)</label>
+        <input 
+          type="text" 
+          value={variantsText}
+          onChange={(e) => setVariantsText(e.target.value)}
+          placeholder="Ej: Holográfico, Transparente, Mate, Brillante" 
+          className="w-full rounded-md border border-input bg-background px-3 py-2 border-primary/50" 
+        />
+        <p className="text-xs text-muted-foreground mt-1">Separa las opciones con comas. Aparecerán como botones seleccionables al comprar.</p>
+      </div>
+
+      <div className="bg-secondary/20 p-4 rounded-xl border">
+        <label className="block text-sm font-bold mb-3">Detalles de Envío y Retiro</label>
+        
+        <div className="mb-4">
+          <label className="block text-xs font-semibold mb-1 text-muted-foreground">Método de Entrega</label>
+          <select 
+            value={shippingType} 
+            onChange={(e) => setShippingType(e.target.value)}
+            className="w-full rounded-md border border-input bg-background px-3 py-2 h-10"
+          >
+            <option value="solo_envio">Solo Envío</option>
+            <option value="solo_retiro">Solo Retiro Presencial</option>
+            <option value="envio_y_retiro">Envío y Retiro Disponibles</option>
+          </select>
+        </div>
+
+        {(shippingType === "solo_retiro" || shippingType === "envio_y_retiro") && (
+          <div className="mt-3 animate-in fade-in slide-in-from-top-2">
+            <label className="block text-xs font-semibold mb-2 text-muted-foreground">Puntos de Retiro Disponibles</label>
+            <div className="grid grid-cols-2 gap-2">
+              {['Linares', 'Talca', 'Longaví', 'Yerbas Buenas'].map(loc => (
+                <label key={loc} className="flex items-center gap-2 text-sm cursor-pointer hover:bg-secondary/40 p-2 rounded-md transition-colors border">
+                  <input 
+                    type="checkbox" 
+                    checked={shippingLocations.includes(loc)}
+                    onChange={() => handleLocationToggle(loc)}
+                    className="rounded border-input text-primary focus:ring-primary h-4 w-4"
+                  />
+                  {loc}
+                </label>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       <div>
@@ -118,9 +213,9 @@ export function ProductForm({ initialData }: { initialData?: any }) {
           <div className="flex flex-col items-center justify-center pt-5 pb-6 text-muted-foreground">
             <ImageIcon className="w-8 h-8 mb-2 opacity-50" />
             <p className="text-sm font-semibold">Click para subir nuevas fotos</p>
-            <p className="text-xs">PNG, JPG o WEBP (Máx. 2MB)</p>
+            <p className="text-xs">PNG, JPG o WEBP (Máx. 10MB)</p>
           </div>
-          <input name="img_dummy" type="file" accept="image/*" multiple className="hidden" onChange={handleFileChange} />
+          <input name="img_dummy" type="file" accept="image/jpeg, image/png, image/webp" multiple className="hidden" onChange={handleFileChange} />
         </label>
         
         {/* Previews logic */}

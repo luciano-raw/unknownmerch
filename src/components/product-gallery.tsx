@@ -22,10 +22,12 @@ export function ProductGallery({ images }: { images: string[] }) {
     <div className="flex flex-col gap-4 h-[500px] w-full">
       {/* Featured Main Image */}
       <div 
-        className={`flex-1 w-full relative bg-secondary rounded-2xl overflow-hidden border ${isZooming ? 'cursor-zoom-in' : 'cursor-crosshair'} touch-none`}
+        className={`flex-1 w-full relative bg-secondary rounded-2xl overflow-hidden border select-none ${isZooming ? 'cursor-zoom-in' : 'cursor-crosshair'} touch-none`}
         onMouseEnter={() => setIsZooming(true)}
         onMouseLeave={() => setIsZooming(false)}
         onMouseMove={handleMouseMove}
+        onContextMenu={(e) => e.preventDefault()}
+        onDragStart={(e) => e.preventDefault()}
       >
         <AnimatePresence mode="wait">
           <motion.div
@@ -33,7 +35,7 @@ export function ProductGallery({ images }: { images: string[] }) {
             initial={{ opacity: 0 }}
             animate={{ 
               opacity: 1, 
-              scale: isZooming ? 2.5 : 1 
+              scale: isZooming ? 1.8 : 1 
             }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
@@ -44,6 +46,12 @@ export function ProductGallery({ images }: { images: string[] }) {
             }}
           />
         </AnimatePresence>
+
+        {/* Anti-Theft Watermark Overlay */}
+        <div 
+          className="absolute inset-0 pointer-events-none z-10 opacity-[0.06]" 
+          style={{ backgroundImage: `url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" transform="rotate(-25)"><text x="0" y="150" font-family="sans-serif" font-size="28" fill="black" font-weight="900">UNKNOWN CLUB</text></svg>')`, backgroundRepeat: 'repeat' }} 
+        />
       </div>
 
       {/* Thumbnails */}

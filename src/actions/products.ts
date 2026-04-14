@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache"
 import { createClient } from "@supabase/supabase-js"
 import { PrismaClient } from "@prisma/client"
 import { v4 as uuidv4 } from "uuid"
+import sharp from "sharp"
 
 const prisma = new PrismaClient()
 
@@ -14,6 +15,7 @@ export async function createProduct(formData: FormData) {
     const category = formData.get("category") as string
     const description = formData.get("description") as string
     const shippingDetails = formData.get("shippingDetails") as string
+    const specsRaw = formData.get("specifications") as string
     const stock = parseInt(formData.get("stock") as string) || 0
     const imageFiles = formData.getAll("images") as File[]
 
@@ -29,20 +31,26 @@ export async function createProduct(formData: FormData) {
       const supabase = createClient(supabaseUrl, supabaseServiceKey)
       
       for (const image of validImages) {
-        // Validation for Max 2MB
-        if (image.size > 2 * 1024 * 1024) {
-          throw new Error(`La imagen ${image.name} supera el tamaño máximo de 2MB.`)
+        // Validation for Max 10MB to allow heavy car photos before compression
+        if (image.size > 10 * 1024 * 1024) {
+          throw new Error(`La imagen ${image.name} supera el tamaño máximo de 10MB.`)
         }
 
-        const fileExt = image.name.split('.').pop()
-        const fileName = `${uuidv4()}.${fileExt}`
         const arrBuffer = await image.arrayBuffer()
-        const buffer = new Uint8Array(arrBuffer)
+        const buffer = Buffer.from(new Uint8Array(arrBuffer))
+
+        // Compress and convert to WebP
+        const optimizedBuffer = await sharp(buffer)
+          .resize(1600, 1600, { fit: "inside", withoutEnlargement: true })
+          .webp({ quality: 80, effort: 4 })
+          .toBuffer()
+
+        const fileName = `${uuidv4()}.webp`
 
         const { error } = await supabase.storage
           .from('products')
-          .upload(fileName, buffer, {
-            contentType: image.type,
+          .upload(fileName, optimizedBuffer, {
+            contentType: 'image/webp',
             upsert: false
           })
 
@@ -65,6 +73,11 @@ export async function createProduct(formData: FormData) {
       imageUrls = ["/placeholder.jpg"]
     }
 
+    let specifications = null
+    if (specsRaw) {
+      try { specifications = JSON.parse(specsRaw) } catch (e) {}
+    }
+
     const product = await prisma.product.create({
       data: {
         name,
@@ -72,6 +85,7 @@ export async function createProduct(formData: FormData) {
         category,
         description,
         shippingDetails,
+        specifications,
         stock,
         images: imageUrls
       }
@@ -93,6 +107,7 @@ export async function updateProduct(id: string, formData: FormData) {
     const category = formData.get("category") as string
     const description = formData.get("description") as string
     const shippingDetails = formData.get("shippingDetails") as string
+    const specsRaw = formData.get("specifications") as string
     const stock = parseInt(formData.get("stock") as string) || 0
     const imageFiles = formData.getAll("images") as File[]
 
@@ -107,22 +122,32 @@ export async function updateProduct(id: string, formData: FormData) {
       const supabase = createClient(supabaseUrl, supabaseServiceKey)
       
       for (const image of validImages) {
-        if (image.size > 2 * 1024 * 1024) throw new Error(`La imagen ${image.name} supera los 2MB.`)
+        if (image.size > 10 * 1024 * 1024) throw new Error(`La imagen ${image.name} supera los 10MB.`)
 
-        const fileExt = image.name.split('.').pop()
-        const fileName = `${uuidv4()}.${fileExt}`
         const arrBuffer = await image.arrayBuffer()
-        const buffer = new Uint8Array(arrBuffer)
+        const buffer = Buffer.from(new Uint8Array(arrBuffer))
+
+        const optimizedBuffer = await sharp(buffer)
+          .resize(1600, 1600, { fit: "inside", withoutEnlargement: true })
+          .webp({ quality: 80, effort: 4 })
+          .toBuffer()
+
+        const fileName = `${uuidv4()}.webp`
 
         const { error } = await supabase.storage
           .from('products')
-          .upload(fileName, buffer, { contentType: image.type, upsert: false })
+          .upload(fileName, optimizedBuffer, { contentType: 'image/webp', upsert: false })
 
         if (error) throw new Error("Error al subir una imagen")
 
         const { data: { publicUrl } } = supabase.storage.from('products').getPublicUrl(fileName)
         imageUrls.push(publicUrl)
       }
+    }
+
+    let specifications = null
+    if (specsRaw) {
+      try { specifications = JSON.parse(specsRaw) } catch (e) {}
     }
 
     // Only update images if new ones were successfully uploaded
@@ -132,6 +157,7 @@ export async function updateProduct(id: string, formData: FormData) {
       category,
       description,
       shippingDetails,
+      specifications,
       stock
     }
 
