@@ -1,0 +1,65 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id        String   @id @default(cuid()) // Will store the Clerk User ID
+  email     String   @unique
+  role      String   @default("user") // "user" or "admin"
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  orders    Order[]
+}
+
+model Product {
+  id               String   @id @default(cuid())
+  name             String
+  description      String
+  price            Float
+  category         String   // "capilares_corporales" or "joyas"
+  images           String[]
+  specifications   Json?    
+  shippingDetails  String?
+  stock            Int      @default(1)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  orderItems       OrderItem[]
+}
+
+model Order {
+  id        String      @id @default(cuid())
+  userId    String?
+  user      User?       @relation(fields: [userId], references: [id])
+  customerName String?
+  customerPhone String?
+  total     Float
+  status    String      @default("pending") // "pending", "whatsapp_sent", "completed"
+  items     OrderItem[]
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+}
+
+model OrderItem {
+  id        String   @id @default(cuid())
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id])
+  productId String
+  product   Product  @relation(fields: [productId], references: [id])
+  quantity  Int
+  price     Float
+}
+
+model StoreSettings {
+  id                 String   @id @default("global")
+  heroBannerUrl      String?  
+  bannerIsActive     Boolean  @default(false)
+  storeNotice        String?  
+  whatsappNumber     String   @default("56930531304")
+  updatedAt          DateTime @updatedAt
+}
