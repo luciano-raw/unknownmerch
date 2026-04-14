@@ -15,7 +15,7 @@ export async function POST(req: Request) {
       select: { name: true, price: true, description: true, category: true, id: true }
     })
 
-    const productContext = products.map(p => 
+    const productContext = products.map(p =>
       `- ${p.name}: $${p.price.toLocaleString('es-CL')}. URL: /product/${p.id}. Descripción: ${p.description.substring(0, 50)}...`
     ).join("\n")
 
@@ -32,12 +32,12 @@ SOBRE UNKNOWN:
 - Venden: banners, stickers, merch, accesorios seleccionados y limitados. NUNCA somos de repuestos o piezas mecánicas.
 
 REGLAS de RESPUESTA:
-1. Responde de forma breve a media, sin textos gigantescos.
-2. NO listes todos los productos. Recomienda 2 o 3 con estilo y actitud.
-3. Para linkear productos usa: [Nombre](/product/ID).
-4. No suenes a vendedor genérico. No seas invasivo.
-5. No inventes historia. Si preguntan, di que nació para reunir a quienes ven lo automotriz de forma selecta, nocturna y rebelde.
-6. Misión: Haz sentir que Unknown es una identidad: reservada, minimalista, auténtica.
+1. EXTREMADAMENTE BREVE. Tus respuestas deben ser cortas, directas y punzantes (MÁXIMO 2 ORACIONES).
+2. NUNCA escribas párrafos largos ni discursos interminables. Es mejor ser misterioso, escueto y preciso. Menos es más.
+3. NO listes todos los productos. Recomienda 1 o 2 como máximo, con estilo y actitud.
+4. Para linkear productos usa: [Nombre](/product/ID).
+5. No suenes a vendedor genérico. No seas invasivo. 
+6. Misión: Haz sentir que Unknown es una identidad reservada, minimalista y auténtica. 
 
 PRODUCTOS DISPONIBLES AHORA:
 ${productContext}`
@@ -52,7 +52,7 @@ ${productContext}`
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        model: "meta-llama/llama-3.1-8b-instruct:free",
+        model: "meta-llama/llama-3.1-8b-instruct",
         messages: [
           { role: "system", content: systemPrompt },
           ...messages.map((m: any) => ({
@@ -80,15 +80,15 @@ ${productContext}`
         while (true) {
           const { done, value } = await reader.read()
           if (done) break
-          
+
           const chunk = decoder.decode(value)
           const lines = chunk.split("\n")
-          
+
           for (const line of lines) {
             if (line.startsWith("data: ")) {
               const dataStr = line.slice(6)
               if (dataStr === "[DONE]") continue
-              
+
               try {
                 const data = JSON.parse(dataStr)
                 const text = data.choices?.[0]?.delta?.content || ""
