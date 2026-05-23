@@ -63,3 +63,19 @@ model StoreSettings {
   whatsappNumber     String   @default("56930531304")
   updatedAt          DateTime @updatedAt
 }
+
+model Vehicle {
+  id            String   @id @default(cuid())
+  brand         String
+  model         String
+  year          Int
+  suspension    String   // 'Stock', 'Neumática', 'Coilovers', 'Static', 'No aplica'
+  instagram     String?
+  description   String
+  images        String[]
+  imagePosition String   @default("center")
+  status        String   @default("Community") // "Community" or "Club Member"
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+

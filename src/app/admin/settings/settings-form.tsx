@@ -53,15 +53,15 @@ export function SettingsForm({ initialData }: { initialData: any }) {
   }
 
   return (
-    <form onSubmit={onSubmit} className="space-y-8">
+    <form onSubmit={onSubmit} className="space-y-6 md:space-y-8 animate-fade-in">
       {/* WhatsApp & Contact */}
-      <div className="bg-card border rounded-xl overflow-hidden shadow-sm p-6">
-        <div className="flex items-center gap-3 mb-6 border-b pb-4">
+      <div className="bg-card border rounded-xl overflow-hidden shadow-sm p-5 md:p-6">
+        <div className="flex items-center gap-3 mb-4 md:mb-6 border-b pb-4">
           <MessageCircle className="w-6 h-6 text-[#25D366]" />
-          <h2 className="text-xl font-bold">Ventas por WhatsApp</h2>
+          <h2 className="text-lg md:text-xl font-bold">Ventas por WhatsApp</h2>
         </div>
         <div className="space-y-2 max-w-sm">
-          <label className="text-sm font-medium">Número de Recepción (Destino)</label>
+          <label className="text-xs md:text-sm font-medium">Número de Recepción (Destino)</label>
           <input 
             type="text" 
             name="whatsappNumber" 
@@ -70,18 +70,18 @@ export function SettingsForm({ initialData }: { initialData: any }) {
             className="w-full flex h-10 rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
             required
           />
-          <p className="text-xs text-muted-foreground">Formato internacional sin el símbolo "+". Ejemplo: 56930531304</p>
+          <p className="text-[11px] md:text-xs text-muted-foreground">Formato internacional sin el símbolo "+". Ejemplo: 56930531304</p>
         </div>
       </div>
 
       {/* Announcement Bar */}
-      <div className="bg-card border rounded-xl overflow-hidden shadow-sm p-6">
-        <div className="flex items-center gap-3 mb-6 border-b pb-4">
+      <div className="bg-card border rounded-xl overflow-hidden shadow-sm p-5 md:p-6">
+        <div className="flex items-center gap-3 mb-4 md:mb-6 border-b pb-4">
           <Megaphone className="w-6 h-6 text-primary" />
-          <h2 className="text-xl font-bold">Cinta de Anuncios (Arriba del sitio)</h2>
+          <h2 className="text-lg md:text-xl font-bold">Cinta de Anuncios (Arriba del sitio)</h2>
         </div>
         <div className="space-y-2">
-          <label className="text-sm font-medium">Mensaje Global</label>
+          <label className="text-xs md:text-sm font-medium">Mensaje Global</label>
           <input 
             type="text" 
             name="storeNotice" 
@@ -89,36 +89,36 @@ export function SettingsForm({ initialData }: { initialData: any }) {
             defaultValue={initialData?.storeNotice || ""}
             className="w-full flex h-10 rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
           />
-          <p className="text-xs text-muted-foreground">Déjalo en blanco si no quieres mostrar ninguna cinta superior.</p>
+          <p className="text-[11px] md:text-xs text-muted-foreground">Déjalo en blanco si no quieres mostrar ninguna cinta superior.</p>
         </div>
       </div>
 
       {/* Hero Banner */}
-      <div className="bg-card border rounded-xl overflow-hidden shadow-sm p-6">
-        <div className="flex items-center gap-3 mb-6 border-b pb-4">
+      <div className="bg-card border rounded-xl overflow-hidden shadow-sm p-5 md:p-6">
+        <div className="flex items-center gap-3 mb-4 md:mb-6 border-b pb-4">
           <ImageIcon className="w-6 h-6 text-primary" />
-          <h2 className="text-xl font-bold">Banner Panorámico (Home)</h2>
+          <h2 className="text-lg md:text-xl font-bold">Banner Panorámico (Home)</h2>
         </div>
         
         <div className="space-y-6">
-          <label className="flex items-center gap-3 cursor-pointer p-4 border rounded-lg hover:bg-muted/30 transition-colors">
-            <div className="relative flex items-center">
+          <label className="flex items-start md:items-center gap-3 cursor-pointer p-4 border rounded-lg hover:bg-muted/30 transition-colors select-none">
+            <div className="relative flex items-center mt-1 md:mt-0">
               <input 
                 type="checkbox" 
                 name="bannerIsActive" 
                 value="true"
                 defaultChecked={initialData?.bannerIsActive}
-                className="w-5 h-5 rounded border-gray-300 text-primary focus:ring-primary"
+                className="w-6 h-6 md:w-5 md:h-5 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
               />
             </div>
             <div>
-              <p className="font-bold">Activar Banner en la página principal</p>
-              <p className="text-xs text-muted-foreground">Apágalo cuando termine la temporada sin borrar la foto.</p>
+              <p className="font-bold text-sm md:text-base">Activar Banner en la página principal</p>
+              <p className="text-[11px] md:text-xs text-muted-foreground">Apágalo cuando termine la temporada sin borrar la foto.</p>
             </div>
           </label>
 
           <div className="space-y-4">
-            <p className="text-sm font-medium">Imagen del Banner</p>
+            <p className="text-xs md:text-sm font-medium">Imagen del Banner</p>
             
             {/* El Input original siempre debe existir en el DOM para que FormData lo recoja */}
             <input 
@@ -132,22 +132,23 @@ export function SettingsForm({ initialData }: { initialData: any }) {
             />
 
             {previewUrl ? (
-              <div className="relative rounded-xl overflow-hidden border aspect-[4/1] bg-secondary flex items-center justify-center group shadow-sm">
-                <img src={previewUrl} alt="Banner Preview" className="w-full h-full object-cover" />
+              <div className="relative rounded-xl overflow-hidden border aspect-[2/1] md:aspect-[4/1] bg-secondary flex items-center justify-center group shadow-sm">
+                <img src={previewUrl} alt="Banner Preview" className="w-full h-full object-cover animate-fade-in" />
                 <button 
                   type="button"
                   onClick={handleRemove}
-                  className="absolute p-3 bg-red-500 text-white rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity transform hover:scale-105"
+                  className="absolute top-3 right-3 md:top-auto md:right-auto p-3 bg-red-600 text-white rounded-full shadow-lg md:opacity-0 md:group-hover:opacity-100 transition-opacity transform hover:scale-105 active:scale-95 flex items-center justify-center"
+                  title="Eliminar Banner"
                 >
                   <Trash2 className="w-5 h-5" />
                 </button>
               </div>
             ) : (
-              <label htmlFor="heroBannerInput" className="flex flex-col items-center justify-center w-full aspect-[4/1] md:aspect-[5/1] border-2 border-dashed rounded-xl cursor-pointer bg-secondary/20 hover:bg-secondary/50 hover:border-primary transition-all">
-                <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                  <ImageIcon className="w-10 h-10 text-muted-foreground mb-3" />
-                  <p className="mb-1 text-sm text-foreground font-bold">Haz clic para subir un Banner</p>
-                  <p className="text-xs text-muted-foreground">Recomendado: 1200 x 300 píxeles. (PNG, JPG, MAX 4.5MB).</p>
+              <label htmlFor="heroBannerInput" className="flex flex-col items-center justify-center w-full aspect-[2/1] md:aspect-[4/1] border-2 border-dashed rounded-xl cursor-pointer bg-secondary/20 hover:bg-secondary/50 hover:border-primary transition-all p-4 text-center">
+                <div className="flex flex-col items-center justify-center pt-3 pb-4">
+                  <ImageIcon className="w-8 h-8 md:w-10 md:h-10 text-muted-foreground mb-3" />
+                  <p className="mb-1 text-xs md:text-sm text-foreground font-bold">Haz clic para subir un Banner</p>
+                  <p className="text-[10px] md:text-xs text-muted-foreground">Recomendado: 1200 x 300 píxeles (PNG, JPG, MAX 4.5MB).</p>
                 </div>
               </label>
             )}
@@ -159,7 +160,7 @@ export function SettingsForm({ initialData }: { initialData: any }) {
         <button 
           type="submit" 
           disabled={loading}
-          className="flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground font-bold rounded-lg shadow hover:bg-primary/90 transition-colors disabled:opacity-50"
+          className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 bg-primary text-primary-foreground font-bold rounded-lg shadow-lg hover:bg-primary/90 transition-colors disabled:opacity-50 active:scale-95 transition-transform duration-100"
         >
           {loading ? "Guardando..." : (
             <>

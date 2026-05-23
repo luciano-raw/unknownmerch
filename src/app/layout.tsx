@@ -73,26 +73,26 @@ export default async function RootLayout({
   const discount = (user?.publicMetadata?.discount as number) || 0;
 
   return (
-    <ClerkProvider>
-      <html lang="es" suppressHydrationWarning className={`${geistSans.variable} ${geistMono.variable}`}>
-        <head>
-          <script
-            dangerouslySetInnerHTML={{
-              __html: `
-                try {
-                  var theme = localStorage.getItem('theme');
-                  var isSysDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-                  if (theme === 'dark' || (!theme && isSysDark)) {
-                    document.documentElement.classList.add('dark');
-                  } else {
-                    document.documentElement.classList.remove('dark');
-                  }
-                } catch (e) {}
-              `,
-            }}
-          />
-        </head>
-        <body className="min-h-screen flex flex-col antialiased" suppressHydrationWarning>
+    <html lang="es" suppressHydrationWarning className={`${geistSans.variable} ${geistMono.variable}`}>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              try {
+                var theme = localStorage.getItem('theme');
+                var isSysDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                if (theme === 'dark' || (!theme && isSysDark)) {
+                  document.documentElement.classList.add('dark');
+                } else {
+                  document.documentElement.classList.remove('dark');
+                }
+              } catch (e) {}
+            `,
+          }}
+        />
+      </head>
+      <body className="min-h-screen flex flex-col antialiased" suppressHydrationWarning>
+        <ClerkProvider>
           <ThemeProvider>
             <DiscountProvider discount={discount} />
             <Header />
@@ -100,8 +100,8 @@ export default async function RootLayout({
             <OrganizationSchema />
             <ChatWidget />
           </ThemeProvider>
-        </body>
-      </html>
-    </ClerkProvider>
+        </ClerkProvider>
+      </body>
+    </html>
   );
 }

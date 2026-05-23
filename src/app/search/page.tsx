@@ -1,8 +1,6 @@
-import { PrismaClient } from "@prisma/client"
+import { prisma } from "@/lib/prisma"
 import { ProductCard } from "@/components/product-card"
 import { Search } from "lucide-react"
-
-const prisma = new PrismaClient()
 
 export default async function SearchPage({
   searchParams,
@@ -35,7 +33,7 @@ export default async function SearchPage({
         </p>
 
         {products.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-6">
             {products.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}

@@ -1,13 +1,13 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { createProduct, updateProduct } from "@/actions/products"
+import { createVehicle, updateVehicle } from "@/actions/vehicles"
 import { useRouter } from "next/navigation"
 import { Image as ImageIcon, Star, Upload, Loader2, Sparkles } from "lucide-react"
 
-export function ProductForm({ initialData }: { initialData?: any }) {
+export function VehicleForm({ initialData }: { initialData?: any }) {
   const [loading, setLoading] = useState(false)
-  const [loadingMessage, setLoadingMessage] = useState("Preparando datos del producto...")
+  const [loadingMessage, setLoadingMessage] = useState("Preparando datos del auto...")
   const [isDragging, setIsDragging] = useState(false)
   
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
@@ -15,40 +15,10 @@ export function ProductForm({ initialData }: { initialData?: any }) {
   const [coverIndex, setCoverIndex] = useState<number>(0)
   const [existingImages, setExistingImages] = useState<string[]>(initialData?.images || [])
   const [existingCoverIndex, setExistingCoverIndex] = useState<number>(0)
-  
-  const [shippingType, setShippingType] = useState<string>("envio_y_retiro")
-  const [shippingLocations, setShippingLocations] = useState<string[]>([])
-  const [variantsText, setVariantsText] = useState<string>("")
+  const [imagePosition, setImagePosition] = useState<string>(initialData?.imagePosition || "center")
   
   const router = useRouter()
 
-  useEffect(() => {
-    if (initialData?.shippingDetails) {
-      try {
-        const parsed = JSON.parse(initialData.shippingDetails)
-        if (parsed.type) setShippingType(parsed.type)
-        if (parsed.locations) setShippingLocations(parsed.locations)
-      } catch (e) {
-        // Fallback for older formats
-      }
-    }
-    
-    if (initialData?.specifications) {
-      try {
-        const specs = typeof initialData.specifications === 'string' ? JSON.parse(initialData.specifications) : initialData.specifications
-        if (specs && Array.isArray(specs.variants) && specs.variants.length > 0) {
-          setVariantsText(specs.variants.join(", "))
-        }
-      } catch(e) {}
-    }
-  }, [initialData])
-
-  const handleLocationToggle = (loc: string) => {
-    setShippingLocations(prev => 
-      prev.includes(loc) ? prev.filter(l => l !== loc) : [...prev, loc]
-    )
-  }
-  
   // Clean memory leaks
   useEffect(() => {
     return () => previewUrls.forEach(url => URL.revokeObjectURL(url))
@@ -56,13 +26,13 @@ export function ProductForm({ initialData }: { initialData?: any }) {
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
-      const filesArray = Array.from(e.target.files).slice(0, 3)
+      const filesArray = Array.from(e.target.files).slice(0, 4)
       setSelectedFiles(filesArray)
       
       previewUrls.forEach(url => URL.revokeObjectURL(url))
       const urls = filesArray.map(file => URL.createObjectURL(file))
       setPreviewUrls(urls)
-      setCoverIndex(0) // Default first new file to cover
+      setCoverIndex(0)
     }
   }
 
@@ -79,7 +49,7 @@ export function ProductForm({ initialData }: { initialData?: any }) {
     e.preventDefault()
     setIsDragging(false)
     if (e.dataTransfer.files) {
-      const filesArray = Array.from(e.dataTransfer.files).slice(0, 3)
+      const filesArray = Array.from(e.dataTransfer.files).slice(0, 4)
       setSelectedFiles(filesArray)
       
       previewUrls.forEach(url => URL.revokeObjectURL(url))
@@ -91,15 +61,14 @@ export function ProductForm({ initialData }: { initialData?: any }) {
 
   async function handleAction(rawFormData: FormData) {
     setLoading(true)
-    setLoadingMessage("Preparando datos del producto...")
+    setLoadingMessage("Preparando datos del auto...")
     
-    // Cycle simulated messages for smoother feedback
     const interval = setInterval(() => {
       setLoadingMessage(prev => {
-        if (prev.includes("Preparando")) return "Optimizando imágenes a formato WebP..."
-        if (prev.includes("Optimizando")) return "Subiendo archivos a Supabase Storage..."
-        if (prev.includes("Subiendo")) return "Guardando datos del producto..."
-        if (prev.includes("Guardando")) return "Revalidando catálogo y finalizando..."
+        if (prev.includes("Preparando")) return "Optimizando fotos a 1400px (WebP q75)..."
+        if (prev.includes("Optimizando")) return "Subiendo a Supabase Storage..."
+        if (prev.includes("Subiendo")) return "Guardando ficha de Garage..."
+        if (prev.includes("Guardando")) return "Revalidando galería y finalizando..."
         return "Guardando cambios..."
       })
     }, 1800)
@@ -107,29 +76,8 @@ export function ProductForm({ initialData }: { initialData?: any }) {
     try {
       const finalFormData = new FormData()
       rawFormData.forEach((value, key) => {
-        if (key !== "images" && key !== "shippingDetails") finalFormData.append(key, value)
+        if (key !== "images") finalFormData.append(key, value)
       })
-
-      // Append Shipping Data
-      const shippingData = {
-        type: shippingType,
-        locations: (shippingType === "solo_retiro" || shippingType === "envio_y_retiro") ? shippingLocations : []
-      }
-      finalFormData.append("shippingDetails", JSON.stringify(shippingData))
-
-      // Append Specifications / Variants
-      let specsObj: any = {}
-      if (initialData?.specifications) {
-        try {
-          specsObj = typeof initialData.specifications === 'string' ? JSON.parse(initialData.specifications) : initialData.specifications
-        } catch(e) {}
-      }
-      if (variantsText.trim()) {
-        specsObj.variants = variantsText.split(",").map(v => v.trim()).filter(Boolean)
-      } else {
-        delete specsObj.variants
-      }
-      finalFormData.append("specifications", JSON.stringify(specsObj))
 
       if (selectedFiles.length > 0) {
         // Enforce the cover image is at index 0
@@ -138,27 +86,22 @@ export function ProductForm({ initialData }: { initialData?: any }) {
           if (index !== coverIndex) finalFormData.append("images", file)
         })
       } else if (initialData?.id && existingImages.length > 0) {
-        // If editing but no NEW images, send the rearranged old images
         const rearrangedOld = [existingImages[existingCoverIndex], ...existingImages.filter((_, i) => i !== existingCoverIndex)]
         finalFormData.append("existingImagesOrder", JSON.stringify(rearrangedOld))
       }
 
       if (initialData?.id) {
-        await updateProduct(initialData.id, finalFormData)
+        await updateVehicle(initialData.id, finalFormData)
       } else {
-        await createProduct(finalFormData)
+        await createVehicle(finalFormData)
       }
       
       clearInterval(interval)
-      if (initialData?.id) {
-        router.push("/admin/products")
-      } else {
-        window.location.reload()
-      }
+      router.push("/admin/garage")
     } catch (error: any) {
       clearInterval(interval)
       setLoading(false)
-      alert("Error al guardar el producto: " + (error.message || "desconocido"))
+      alert("Error al guardar el vehículo: " + (error.message || "desconocido"))
     }
   }
 
@@ -168,17 +111,16 @@ export function ProductForm({ initialData }: { initialData?: any }) {
 
   return (
     <>
-      {/* Full-Screen Blocking Loading Overlay */}
+      {/* Full-Screen Loading Overlay */}
       {loading && (
         <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-background/90 backdrop-blur-md transition-all duration-300">
           <div className="relative flex flex-col items-center max-w-sm text-center px-6">
-            {/* Spinning & Pulsing Ring Indicator */}
             <div className="relative w-20 h-20 mb-6 flex items-center justify-center">
               <div className="absolute inset-0 rounded-full border-4 border-muted-foreground/10" />
               <div className="absolute inset-0 rounded-full border-4 border-t-primary border-r-transparent border-b-transparent border-l-transparent animate-spin" />
               <Sparkles className="w-8 h-8 text-primary animate-pulse" />
             </div>
-            <h3 className="text-lg font-bold text-foreground mb-2">Procesando Producto</h3>
+            <h3 className="text-lg font-bold text-foreground mb-2">Procesando Vehículo</h3>
             <p className="text-sm text-muted-foreground animate-pulse min-h-[20px]">{loadingMessage}</p>
           </div>
         </div>
@@ -188,125 +130,122 @@ export function ProductForm({ initialData }: { initialData?: any }) {
         <div className="grid md:grid-cols-2 gap-8">
           {/* Left Column: Form Details */}
           <div className="space-y-5">
-            <div>
-              <label className={labelClasses}>Nombre del Producto</label>
-              <input 
-                name="name" 
-                required 
-                disabled={loading}
-                className={inputClasses} 
-                defaultValue={initialData?.name} 
-                placeholder="Ej: Sticker JDM Club"
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className={labelClasses}>Marca</label>
+                <input 
+                  name="brand" 
+                  required 
+                  disabled={loading}
+                  className={inputClasses} 
+                  defaultValue={initialData?.brand} 
+                  placeholder="Ej: Toyota"
+                />
+              </div>
+              <div>
+                <label className={labelClasses}>Modelo</label>
+                <input 
+                  name="model" 
+                  required 
+                  disabled={loading}
+                  className={inputClasses} 
+                  defaultValue={initialData?.model} 
+                  placeholder="Ej: GT86"
+                />
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className={labelClasses}>Precio ($)</label>
+                <label className={labelClasses}>Año</label>
                 <input 
-                  name="price" 
+                  name="year" 
                   type="number" 
+                  min="1900"
+                  max="2100"
                   required 
                   disabled={loading}
                   className={inputClasses} 
-                  defaultValue={initialData?.price} 
-                  placeholder="3500"
+                  defaultValue={initialData?.year ?? new Date().getFullYear()} 
+                  placeholder="2018"
                 />
               </div>
               <div>
-                <label className={labelClasses}>Stock Disponible</label>
-                <input 
-                  name="stock" 
-                  type="number" 
-                  min="0" 
+                <label className={labelClasses}>Tipo de Suspensión</label>
+                <select 
+                  name="suspension" 
                   required 
                   disabled={loading}
-                  className={inputClasses} 
-                  defaultValue={initialData?.stock ?? 1} 
-                  placeholder="10"
-                />
+                  className={selectClasses} 
+                  defaultValue={initialData?.suspension || "Stock"}
+                >
+                  <option value="Stock">Stock</option>
+                  <option value="Neumática">Neumática</option>
+                  <option value="Coilovers">Coilovers</option>
+                  <option value="Static">Static</option>
+                  <option value="No aplica">No aplica</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className={labelClasses}>Instagram (opcional)</label>
+                <div className="relative">
+                  <span className="absolute left-3 top-3 text-muted-foreground text-xs font-bold">@</span>
+                  <input 
+                    name="instagram" 
+                    disabled={loading}
+                    className={`${inputClasses} pl-7`} 
+                    defaultValue={initialData?.instagram ? initialData.instagram.replace('@', '') : ""} 
+                    placeholder="luciano.raw"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className={labelClasses}>Rango / Estado</label>
+                <select 
+                  name="status" 
+                  required 
+                  disabled={loading}
+                  className={selectClasses} 
+                  defaultValue={initialData?.status || "Community"}
+                >
+                  <option value="Community">Community</option>
+                  <option value="Club Member">Club Member</option>
+                </select>
               </div>
             </div>
 
             <div>
-              <label className={labelClasses}>Categoría</label>
+              <label className={labelClasses}>Alineación de Foto de Portada (En Galería)</label>
               <select 
-                name="category" 
+                name="imagePosition" 
                 required 
                 disabled={loading}
                 className={selectClasses} 
-                defaultValue={initialData?.category || "apparel"}
+                value={imagePosition}
+                onChange={(e) => setImagePosition(e.target.value)}
               >
-                <option value="stickers">Stickers & Banners</option>
-                <option value="apparel">Apparel</option>
-                <option value="accessories">Car Accessories</option>
+                <option value="center">Centro</option>
+                <option value="top">Arriba</option>
+                <option value="bottom">Abajo</option>
+                <option value="left">Izquierda</option>
+                <option value="right">Derecha</option>
               </select>
             </div>
 
             <div>
-              <label className={labelClasses}>Descripción</label>
+              <label className={labelClasses}>Descripción / Spec List</label>
               <textarea 
                 name="description" 
                 required 
-                rows={3} 
+                rows={4} 
                 disabled={loading}
                 className={`${inputClasses} resize-none`} 
                 defaultValue={initialData?.description} 
-                placeholder="Escribe detalles del producto, materiales o especificaciones..."
+                placeholder="Ej: Llantas JR3, Línea de escape de 2.5, Inducción HKS, etc..."
               />
-            </div>
-
-            <div>
-              <label className={`${labelClasses} text-primary flex items-center gap-1.5`}>
-                Opciones de Variante / Material <span className="text-[10px] text-muted-foreground lowercase normal-case font-normal">(opcional)</span>
-              </label>
-              <input 
-                type="text" 
-                value={variantsText}
-                onChange={(e) => setVariantsText(e.target.value)}
-                disabled={loading}
-                placeholder="Ej: Holográfico, Transparente, Mate, Brillante" 
-                className={`${inputClasses} border-primary/30 focus:border-primary`}
-              />
-              <p className="text-[11px] text-muted-foreground mt-1">Separa las opciones con comas. Aparecerán como selectores en la tienda.</p>
-            </div>
-
-            <div className="bg-secondary/10 p-5 rounded-xl border border-border/80">
-              <label className="block text-xs font-bold uppercase tracking-wider text-foreground mb-3">Envío y Puntos de Retiro</label>
-              
-              <div className="mb-4">
-                <label className="block text-[11px] font-semibold mb-1.5 text-muted-foreground">Método de Entrega</label>
-                <select 
-                  value={shippingType} 
-                  onChange={(e) => setShippingType(e.target.value)}
-                  disabled={loading}
-                  className={selectClasses}
-                >
-                  <option value="solo_envio">Solo Envío</option>
-                  <option value="solo_retiro">Solo Retiro Presencial</option>
-                  <option value="envio_y_retiro">Envío y Retiro Disponibles</option>
-                </select>
-              </div>
-
-              {(shippingType === "solo_retiro" || shippingType === "envio_y_retiro") && (
-                <div className="mt-3 animate-in fade-in slide-in-from-top-2 duration-200">
-                  <label className="block text-[11px] font-semibold mb-2.5 text-muted-foreground">Ciudades Disponibles para Retiro</label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {['Linares', 'Talca', 'Longaví', 'Yerbas Buenas'].map(loc => (
-                      <label key={loc} className="flex items-center gap-2 text-sm cursor-pointer hover:bg-secondary/20 p-2.5 rounded-lg transition-colors border border-border bg-background/20 select-none">
-                        <input 
-                          type="checkbox" 
-                          checked={shippingLocations.includes(loc)}
-                          onChange={() => handleLocationToggle(loc)}
-                          disabled={loading}
-                          className="rounded border-input text-primary focus:ring-primary h-4 w-4 bg-background"
-                        />
-                        <span className="text-xs text-foreground/80 font-medium">{loc}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-              )}
             </div>
           </div>
 
@@ -314,14 +253,14 @@ export function ProductForm({ initialData }: { initialData?: any }) {
           <div className="space-y-6 flex flex-col justify-between">
             <div className="space-y-4">
               <div>
-                <label className={labelClasses}>Imágenes del Producto</label>
-                <p className="text-xs text-muted-foreground mb-3">Sube hasta 3 imágenes. Haz click en una para definirla como Portada.</p>
+                <label className={labelClasses}>Fotos del Auto</label>
+                <p className="text-xs text-muted-foreground mb-3">Sube hasta 4 imágenes. Haz click en una para definirla como Portada.</p>
                 
                 <label 
                   onDragOver={handleDragOver}
                   onDragLeave={handleDragLeave}
                   onDrop={handleDrop}
-                  htmlFor="file-upload-input"
+                  htmlFor="vehicle-upload-input"
                   className={`flex flex-col items-center justify-center w-full h-40 border-2 border-dashed rounded-xl cursor-pointer transition-all duration-300 ${
                     isDragging 
                       ? "border-primary bg-primary/5 scale-[1.01]" 
@@ -333,11 +272,11 @@ export function ProductForm({ initialData }: { initialData?: any }) {
                     <p className="text-sm font-semibold text-foreground">
                       {isDragging ? "¡Suelta las fotos aquí!" : "Sube o arrastra imágenes"}
                     </p>
-                    <p className="text-xs text-muted-foreground mt-1">Soporta PNG, JPG o WEBP (Máx. 10MB)</p>
+                    <p className="text-xs text-muted-foreground mt-1">Soporta PNG, JPG o WEBP (Máx. 4 imágenes, 10MB c/u)</p>
                   </div>
                   <input 
-                    id="file-upload-input"
-                    name="img_dummy" 
+                    id="vehicle-upload-input"
+                    name="images" 
                     type="file" 
                     accept="image/jpeg, image/png, image/webp" 
                     multiple 
@@ -352,7 +291,7 @@ export function ProductForm({ initialData }: { initialData?: any }) {
               {(previewUrls.length > 0 || existingImages.length > 0) && (
                 <div className="space-y-2">
                   <span className={labelClasses}>Distribución y Portada</span>
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-4 gap-2.5">
                     {previewUrls.length > 0 
                       ? previewUrls.map((url, index) => (
                           <div 
@@ -364,15 +303,15 @@ export function ProductForm({ initialData }: { initialData?: any }) {
                             }`} 
                             onClick={() => !loading && setCoverIndex(index)}
                           >
-                            <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${url})` }} />
+                            <div className="absolute inset-0 bg-cover" style={{ backgroundImage: `url(${url})`, backgroundPosition: index === coverIndex ? imagePosition : 'center' }} />
                             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60 group-hover:opacity-30 transition-opacity" />
                             
-                            <div className="absolute top-1.5 right-1.5">
-                              <div className={`p-1 rounded-full ${index === coverIndex ? "bg-amber-400 text-amber-950" : "bg-black/50 text-white hover:bg-black/70"} transition-colors shadow-sm`}>
-                                <Star className={`w-3.5 h-3.5 ${index === coverIndex ? "fill-amber-950" : ""}`} />
+                            <div className="absolute top-1 right-1">
+                              <div className={`p-0.5 rounded-full ${index === coverIndex ? "bg-amber-400 text-amber-950" : "bg-black/50 text-white hover:bg-black/70"} transition-colors shadow-sm`}>
+                                <Star className={`w-3 h-3 ${index === coverIndex ? "fill-amber-950" : ""}`} />
                               </div>
                             </div>
-                            <div className="absolute bottom-1.5 left-2 text-[9px] font-bold text-white tracking-wider uppercase">
+                            <div className="absolute bottom-1 left-1.5 text-[8px] font-bold text-white tracking-wider uppercase">
                               {index === coverIndex ? "Portada" : `Foto ${index + 1}`}
                             </div>
                           </div>
@@ -387,15 +326,15 @@ export function ProductForm({ initialData }: { initialData?: any }) {
                             }`} 
                             onClick={() => !loading && setExistingCoverIndex(index)}
                           >
-                            <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${url})` }} />
+                            <div className="absolute inset-0 bg-cover" style={{ backgroundImage: `url(${url})`, backgroundPosition: index === existingCoverIndex ? imagePosition : 'center' }} />
                             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60 group-hover:opacity-30 transition-opacity" />
                             
-                            <div className="absolute top-1.5 right-1.5">
-                              <div className={`p-1 rounded-full ${index === existingCoverIndex ? "bg-amber-400 text-amber-950" : "bg-black/50 text-white hover:bg-black/70"} transition-colors shadow-sm`}>
-                                <Star className={`w-3.5 h-3.5 ${index === existingCoverIndex ? "fill-amber-950" : ""}`} />
+                            <div className="absolute top-1 right-1">
+                              <div className={`p-0.5 rounded-full ${index === existingCoverIndex ? "bg-amber-400 text-amber-950" : "bg-black/50 text-white hover:bg-black/70"} transition-colors shadow-sm`}>
+                                <Star className={`w-3 h-3 ${index === existingCoverIndex ? "fill-amber-950" : ""}`} />
                               </div>
                             </div>
-                            <div className="absolute bottom-1.5 left-2 text-[9px] font-bold text-white tracking-wider uppercase">
+                            <div className="absolute bottom-1 left-1.5 text-[8px] font-bold text-white tracking-wider uppercase">
                               {index === existingCoverIndex ? "Portada" : `Foto ${index + 1}`}
                             </div>
                           </div>
@@ -418,7 +357,7 @@ export function ProductForm({ initialData }: { initialData?: any }) {
                     Procesando...
                   </>
                 ) : (
-                  initialData ? "Guardar Cambios" : "Crear Producto"
+                  initialData ? "Guardar Cambios" : "Agregar Auto al Garage"
                 )}
               </button>
             </div>
@@ -428,5 +367,3 @@ export function ProductForm({ initialData }: { initialData?: any }) {
     </>
   )
 }
-
-

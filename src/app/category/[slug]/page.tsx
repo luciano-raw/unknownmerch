@@ -1,7 +1,5 @@
 import { ProductCard, ProductType } from "@/components/product-card"
-import { PrismaClient } from "@prisma/client"
-
-const prisma = new PrismaClient()
+import { prisma } from "@/lib/prisma"
 
 export default async function CategoryPage({
   params,
@@ -14,7 +12,10 @@ export default async function CategoryPage({
   let title = "Categoría"
   let description = "Explora nuestros mejores productos."
   
-  if (slug === "stickers") {
+  if (slug === "all") {
+    title = "Todos los Productos"
+    description = "Nuestra colección completa de streetwear, stickers y accesorios."
+  } else if (slug === "stickers") {
     title = "Stickers & Banners"
     description = "Pega tu estilo en cualquier parte. Calidad premium para exterior."
   } else if (slug === "apparel") {
@@ -27,7 +28,7 @@ export default async function CategoryPage({
 
   // Fetch from Prisma Database
   const products = await prisma.product.findMany({ 
-    where: { category: slug },
+    where: slug === "all" ? {} : { category: slug },
     orderBy: { createdAt: "desc" }
   })
 
@@ -42,7 +43,7 @@ export default async function CategoryPage({
             <p className="text-muted-foreground">{description}</p>
           </div>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-6">
             {products.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}

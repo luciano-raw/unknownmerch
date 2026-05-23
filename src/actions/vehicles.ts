@@ -6,15 +6,16 @@ import { prisma } from "@/lib/prisma"
 import { v4 as uuidv4 } from "uuid"
 import sharp from "sharp"
 
-export async function createProduct(formData: FormData) {
+export async function createVehicle(formData: FormData) {
   try {
-    const name = formData.get("name") as string
-    const price = parseFloat(formData.get("price") as string)
-    const category = formData.get("category") as string
+    const brand = formData.get("brand") as string
+    const model = formData.get("model") as string
+    const year = parseInt(formData.get("year") as string) || new Date().getFullYear()
+    const suspension = formData.get("suspension") as string
+    const instagram = (formData.get("instagram") as string) || null
     const description = formData.get("description") as string
-    const shippingDetails = formData.get("shippingDetails") as string
-    const specsRaw = formData.get("specifications") as string
-    const stock = parseInt(formData.get("stock") as string) || 0
+    const status = (formData.get("status") as string) || "Community"
+    const imagePosition = (formData.get("imagePosition") as string) || "center"
     const imageFiles = formData.getAll("images") as File[]
 
     let imageUrls: string[] = []
@@ -22,14 +23,13 @@ export async function createProduct(formData: FormData) {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
     const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
-    // Filter empty selections and limit to 3 images max
-    const validImages = imageFiles.filter(f => f && f.size > 0).slice(0, 3)
+    // Filter valid images and limit to 4 max
+    const validImages = imageFiles.filter(f => f && f.size > 0).slice(0, 4)
 
     if (validImages.length > 0 && supabaseUrl && supabaseServiceKey) {
       const supabase = createClient(supabaseUrl, supabaseServiceKey)
       
       for (const image of validImages) {
-        // Validation for Max 10MB to allow heavy car photos before compression
         if (image.size > 10 * 1024 * 1024) {
           throw new Error(`La imagen ${image.name} supera el tamaño máximo de 10MB.`)
         }
@@ -37,14 +37,15 @@ export async function createProduct(formData: FormData) {
         const arrBuffer = await image.arrayBuffer()
         const buffer = Buffer.from(new Uint8Array(arrBuffer))
 
-        // Compress and convert to WebP
+        // Compress: quality 75, max width 1400px WebP
         const optimizedBuffer = await sharp(buffer)
-          .resize(1600, 1600, { fit: "inside", withoutEnlargement: true })
-          .webp({ quality: 80, effort: 4 })
+          .resize(1400, null, { fit: "inside", withoutEnlargement: true })
+          .webp({ quality: 75, effort: 4 })
           .toBuffer()
 
-        const fileName = `${uuidv4()}.webp`
+        const fileName = `vehicles/${uuidv4()}.webp`
 
+        // Try 'products' bucket, if not, fallback to 'vehicles' or upload
         const { error } = await supabase.storage
           .from('products')
           .upload(fileName, optimizedBuffer, {
@@ -63,50 +64,45 @@ export async function createProduct(formData: FormData) {
           
         imageUrls.push(publicUrl)
       }
-    } else if (validImages.length > 0) {
-       console.log("Supabase credentials missing. Skipping image upload.");
     }
 
     if (imageUrls.length === 0) {
       imageUrls = ["/placeholder.jpg"]
     }
 
-    let specifications = null
-    if (specsRaw) {
-      try { specifications = JSON.parse(specsRaw) } catch (e) {}
-    }
-
-    const product = await prisma.product.create({
+    const vehicle = await prisma.vehicle.create({
       data: {
-        name,
-        price,
-        category,
+        brand,
+        model,
+        year,
+        suspension,
+        instagram,
         description,
-        shippingDetails,
-        specifications,
-        stock,
-        images: imageUrls
+        images: imageUrls,
+        imagePosition,
+        status
       }
     })
 
-    revalidatePath("/admin/products")
-    revalidatePath("/")
-    return product
+    revalidatePath("/garage")
+    revalidatePath("/admin/garage")
+    return vehicle
   } catch (err: any) {
     console.error(err)
-    throw new Error(err.message || "Error al crear el producto")
+    throw new Error(err.message || "Error al crear el vehículo")
   }
 }
 
-export async function updateProduct(id: string, formData: FormData) {
+export async function updateVehicle(id: string, formData: FormData) {
   try {
-    const name = formData.get("name") as string
-    const price = parseFloat(formData.get("price") as string)
-    const category = formData.get("category") as string
+    const brand = formData.get("brand") as string
+    const model = formData.get("model") as string
+    const year = parseInt(formData.get("year") as string) || new Date().getFullYear()
+    const suspension = formData.get("suspension") as string
+    const instagram = (formData.get("instagram") as string) || null
     const description = formData.get("description") as string
-    const shippingDetails = formData.get("shippingDetails") as string
-    const specsRaw = formData.get("specifications") as string
-    const stock = parseInt(formData.get("stock") as string) || 0
+    const status = (formData.get("status") as string) || "Community"
+    const imagePosition = (formData.get("imagePosition") as string) || "center"
     const imageFiles = formData.getAll("images") as File[]
 
     let imageUrls: string[] = []
@@ -114,7 +110,7 @@ export async function updateProduct(id: string, formData: FormData) {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
     const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
-    const validImages = imageFiles.filter(f => f && f.size > 0).slice(0, 3)
+    const validImages = imageFiles.filter(f => f && f.size > 0).slice(0, 4)
 
     if (validImages.length > 0 && supabaseUrl && supabaseServiceKey) {
       const supabase = createClient(supabaseUrl, supabaseServiceKey)
@@ -126,11 +122,11 @@ export async function updateProduct(id: string, formData: FormData) {
         const buffer = Buffer.from(new Uint8Array(arrBuffer))
 
         const optimizedBuffer = await sharp(buffer)
-          .resize(1600, 1600, { fit: "inside", withoutEnlargement: true })
-          .webp({ quality: 80, effort: 4 })
+          .resize(1400, null, { fit: "inside", withoutEnlargement: true })
+          .webp({ quality: 75, effort: 4 })
           .toBuffer()
 
-        const fileName = `${uuidv4()}.webp`
+        const fileName = `vehicles/${uuidv4()}.webp`
 
         const { error } = await supabase.storage
           .from('products')
@@ -143,20 +139,15 @@ export async function updateProduct(id: string, formData: FormData) {
       }
     }
 
-    let specifications = null
-    if (specsRaw) {
-      try { specifications = JSON.parse(specsRaw) } catch (e) {}
-    }
-
-    // Only update images if new ones were successfully uploaded
     const updateData: any = {
-      name,
-      price,
-      category,
+      brand,
+      model,
+      year,
+      suspension,
+      instagram,
       description,
-      shippingDetails,
-      specifications,
-      stock
+      imagePosition,
+      status
     }
 
     if (imageUrls.length > 0) {
@@ -173,43 +164,52 @@ export async function updateProduct(id: string, formData: FormData) {
       } catch (e) {}
     }
 
-    const product = await prisma.product.update({
+    const vehicle = await prisma.vehicle.update({
       where: { id },
       data: updateData
     })
 
-    revalidatePath("/admin/products")
-    revalidatePath("/")
-    revalidatePath(`/product/${id}`)
-    return product
+    revalidatePath("/garage")
+    revalidatePath("/admin/garage")
+    return vehicle
   } catch (err: any) {
     console.error(err)
-    throw new Error(err.message || "Error al actualizar el producto")
+    throw new Error(err.message || "Error al actualizar el vehículo")
   }
 }
 
-export async function getProducts() {
-  return await prisma.product.findMany({
-    orderBy: { createdAt: "desc" }
-  })
-}
-
-export async function deleteProduct(id: string) {
-  await prisma.product.delete({ where: { id } })
-  revalidatePath("/admin/products")
-}
-
-export async function updateProductStock(id: string, stock: number) {
+export async function getVehicles() {
   try {
-    await prisma.product.update({
-      where: { id },
-      data: { stock }
+    return await prisma.vehicle.findMany({
+      orderBy: { createdAt: "desc" }
     })
-    revalidatePath("/admin/inventory")
-    revalidatePath("/") // To update main store availability if needed
-    revalidatePath(`/product/${id}`)
   } catch (error) {
-    console.error("Error updating stock:", error)
-    throw new Error("Failed to update stock")
+    console.error("Error fetching vehicles:", error)
+    return []
+  }
+}
+
+export async function deleteVehicle(id: string) {
+  try {
+    await prisma.vehicle.delete({ where: { id } })
+    revalidatePath("/garage")
+    revalidatePath("/admin/garage")
+  } catch (error) {
+    console.error("Error deleting vehicle:", error)
+    throw new Error("Failed to delete vehicle")
+  }
+}
+
+export async function updateVehicleStatus(id: string, status: string) {
+  try {
+    await prisma.vehicle.update({
+      where: { id },
+      data: { status }
+    })
+    revalidatePath("/garage")
+    revalidatePath("/admin/garage")
+  } catch (error) {
+    console.error("Error updating vehicle status:", error)
+    throw new Error("Failed to update status")
   }
 }

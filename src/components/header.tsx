@@ -41,6 +41,12 @@ export async function Header() {
             >
               Club
             </Link>
+            <Link
+              href="/garage"
+              className="transition-colors hover:text-primary"
+            >
+              Garage
+            </Link>
           </nav>
         </div>
         <div className="flex items-center gap-4">
@@ -70,6 +76,9 @@ export async function Header() {
               </Link>
               <Link href="/nosotros" className="text-xl font-black uppercase italic hover:text-primary transition-colors">
                 Club
+              </Link>
+              <Link href="/garage" className="text-xl font-black uppercase italic hover:text-primary transition-colors">
+                Garage
               </Link>
               {isAdmin && (
                 <Link href="/admin" className="text-lg font-bold text-primary hover:text-primary/80 transition-colors border-b pb-2">

@@ -1,15 +1,13 @@
 import Link from "next/link"
-import { PrismaClient } from "@prisma/client"
-import { ProductCard } from "@/components/product-card"
+import { prisma } from "@/lib/prisma"
+import { FeaturedProducts } from "@/components/featured-products"
 import { SearchBar } from "@/components/search-bar"
 import { getStoreSettings } from "@/actions/settings"
-
-const prisma = new PrismaClient()
 
 export default async function Home() {
   const latestProducts = await prisma.product.findMany({
     orderBy: { createdAt: 'desc' },
-    take: 8
+    take: 12
   })
   
   const baseUrl = 'https://unknown-club.store'
@@ -59,11 +57,7 @@ export default async function Home() {
           </div>
 
           {latestProducts.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
-              {latestProducts.map((product) => (
-                <ProductCard key={product.id} product={product} />
-              ))}
-            </div>
+            <FeaturedProducts products={latestProducts} />
           ) : (
             <div className="py-12 text-center bg-secondary/20 rounded-2xl">
               <p className="text-muted-foreground text-lg">Pronto subiremos nuestros mejores productos aquí.</p>

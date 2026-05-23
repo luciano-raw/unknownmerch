@@ -1,8 +1,6 @@
-import { PrismaClient } from "@prisma/client"
+import { prisma } from "@/lib/prisma"
 import { updateProductStock } from "@/actions/products"
 import { Package, AlertTriangle, XCircle, CheckCircle2, Save } from "lucide-react"
-
-const prisma = new PrismaClient()
 
 export default async function AdminInventoryPage() {
   const products = await prisma.product.findMany({
@@ -19,45 +17,45 @@ export default async function AdminInventoryPage() {
   const healthyStock = products.filter(p => p.stock > 5).length
 
   return (
-    <div className="flex flex-col min-h-screen bg-background text-foreground">
-      <main className="flex-1 container mx-auto px-4 py-8 max-w-6xl">
-        <h1 className="text-3xl font-bold mb-2 text-primary">Control de Inventario</h1>
-        <p className="text-muted-foreground mb-8">Administra el stock real de tu bodega en tiempo récord tras tus ventas por WhatsApp.</p>
+    <div className="flex flex-col min-h-screen bg-background text-foreground animate-fade-in">
+      <main className="flex-1 container mx-auto px-4 py-6 md:py-8 max-w-6xl">
+        <h1 className="text-2xl md:text-3xl font-bold mb-2 text-primary">Control de Inventario</h1>
+        <p className="text-sm md:text-base text-muted-foreground mb-6 md:mb-8">Administra el stock real de tu bodega en tiempo récord tras tus ventas por WhatsApp.</p>
         
         {/* KPI Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-8">
-          <div className="bg-card border rounded-xl overflow-hidden shadow-sm p-4 flex items-center justify-between">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-6 md:mb-8">
+          <div className="bg-card border rounded-xl overflow-hidden shadow-sm p-3 md:p-4 flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-muted-foreground">Total Catálogo</p>
-              <h3 className="text-2xl font-bold">{totalProducts}</h3>
+              <p className="text-[11px] md:text-sm font-medium text-muted-foreground">Total Catálogo</p>
+              <h3 className="text-xl md:text-2xl font-bold mt-0.5">{totalProducts}</h3>
             </div>
-            <Package className="w-8 h-8 text-primary opacity-20" />
+            <Package className="w-6 h-6 md:w-8 md:h-8 text-primary opacity-20" />
           </div>
-          <div className="bg-green-500/10 border border-green-500/20 rounded-xl overflow-hidden shadow-sm p-4 flex items-center justify-between">
+          <div className="bg-green-500/10 border border-green-500/20 rounded-xl overflow-hidden shadow-sm p-3 md:p-4 flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-green-700 dark:text-green-400">Stock Sano (&gt;5)</p>
-              <h3 className="text-2xl font-bold text-green-800 dark:text-green-300">{healthyStock}</h3>
+              <p className="text-[11px] md:text-sm font-medium text-green-700 dark:text-green-400">Stock Sano (&gt;5)</p>
+              <h3 className="text-xl md:text-2xl font-bold text-green-800 dark:text-green-300 mt-0.5">{healthyStock}</h3>
             </div>
-            <CheckCircle2 className="w-8 h-8 text-green-500 opacity-20" />
+            <CheckCircle2 className="w-6 h-6 md:w-8 md:h-8 text-green-500 opacity-20" />
           </div>
-          <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl overflow-hidden shadow-sm p-4 flex items-center justify-between">
+          <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl overflow-hidden shadow-sm p-3 md:p-4 flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-yellow-700 dark:text-yellow-400">Por Agotarse (1-5)</p>
-              <h3 className="text-2xl font-bold text-yellow-800 dark:text-yellow-300">{lowStock}</h3>
+              <p className="text-[11px] md:text-sm font-medium text-yellow-700 dark:text-yellow-400">Por Agotarse (1-5)</p>
+              <h3 className="text-xl md:text-2xl font-bold text-yellow-800 dark:text-yellow-300 mt-0.5">{lowStock}</h3>
             </div>
-            <AlertTriangle className="w-8 h-8 text-yellow-500 opacity-20" />
+            <AlertTriangle className="w-6 h-6 md:w-8 md:h-8 text-yellow-500 opacity-20" />
           </div>
-          <div className="bg-red-500/10 border border-red-500/20 rounded-xl overflow-hidden shadow-sm p-4 flex items-center justify-between">
+          <div className="bg-red-500/10 border border-red-500/20 rounded-xl overflow-hidden shadow-sm p-3 md:p-4 flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-red-700 dark:text-red-400">Agotados (0)</p>
-              <h3 className="text-2xl font-bold text-red-800 dark:text-red-300">{outOfStock}</h3>
+              <p className="text-[11px] md:text-sm font-medium text-red-700 dark:text-red-400">Agotados (0)</p>
+              <h3 className="text-xl md:text-2xl font-bold text-red-800 dark:text-red-300 mt-0.5">{outOfStock}</h3>
             </div>
-            <XCircle className="w-8 h-8 text-red-500 opacity-20" />
+            <XCircle className="w-6 h-6 md:w-8 md:h-8 text-red-500 opacity-20" />
           </div>
         </div>
 
-        {/* Master Data Table */}
-        <div className="bg-card border rounded-xl overflow-hidden shadow-sm">
+        {/* Desktop View: Table */}
+        <div className="hidden md:block bg-card border rounded-xl overflow-hidden shadow-sm">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead className="bg-muted/50 border-b">
@@ -139,6 +137,76 @@ export default async function AdminInventoryPage() {
               </tbody>
             </table>
           </div>
+        </div>
+
+        {/* Mobile View: Cards */}
+        <div className="block md:hidden space-y-4">
+          {products.length === 0 ? (
+            <div className="p-8 text-center text-muted-foreground border rounded-xl bg-card">
+              No hay productos registrados en el inventario.
+            </div>
+          ) : (
+            products.map((p) => {
+              const isZero = p.stock === 0
+              const isLow = p.stock > 0 && p.stock <= 5
+
+              return (
+                <div key={p.id} className="p-4 border rounded-xl bg-card flex flex-col gap-4 shadow-sm">
+                  <div className="flex items-center gap-3">
+                    <img src={p.images[0] || ""} alt="" className="w-12 h-12 rounded-md bg-secondary object-cover flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-sm text-foreground truncate">{p.name}</p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="text-xs text-primary font-bold">${p.price.toLocaleString("es-CL")}</span>
+                        <span className="capitalize px-1.5 py-0.5 bg-secondary text-secondary-foreground rounded text-[10px] font-medium">
+                          {p.category.replace('_', ' ')}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <div className="flex-shrink-0">
+                      {isZero ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-red-500/20 text-red-600 dark:text-red-400">
+                          <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span> Agotado
+                        </span>
+                      ) : isLow ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-yellow-500/20 text-yellow-600 dark:text-yellow-400">
+                          <span className="w-1.5 h-1.5 rounded-full bg-yellow-500"></span> Por Agotarse
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-green-500/20 text-green-600 dark:text-green-400">
+                          <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span> Normal
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between border-t border-border pt-3">
+                    <span className="text-xs text-muted-foreground font-medium">Inventario:</span>
+                    <form action={async (formData) => {
+                      "use server"
+                      const newStock = parseInt(formData.get("stock") as string) || 0
+                      await updateProductStock(p.id, newStock)
+                    }} className="flex items-center gap-2">
+                      <div className="relative">
+                        <input 
+                          name="stock" 
+                          type="number" 
+                          min="0" 
+                          defaultValue={p.stock} 
+                          className={`w-24 h-10 px-3 pr-8 text-right rounded-md border-2 font-bold focus:outline-none focus:ring-2 focus:ring-primary ${isZero ? "border-red-500/50 bg-red-500/5" : isLow ? "border-yellow-500/50 bg-yellow-500/5" : "border-border bg-background"}`}
+                        />
+                        <span className="absolute right-3 top-2.5 text-muted-foreground text-xs font-bold">ud</span>
+                      </div>
+                      <button type="submit" className="h-10 px-3 bg-primary text-primary-foreground hover:bg-primary/90 rounded-md transition-colors shadow-sm flex items-center justify-center gap-1.5 text-xs font-bold">
+                        <Save className="w-4 h-4" /> Guardar
+                      </button>
+                    </form>
+                  </div>
+                </div>
+              )
+            })
+          )}
         </div>
       </main>
     </div>
