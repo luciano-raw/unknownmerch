@@ -27,7 +27,7 @@ export default async function Home() {
                   minimalist aesthetics for automotive enthusiasts.
                 </p>
               </div>
-              <div className="space-x-4">
+              <div className="hidden md:block space-x-4">
                 <Link
                   href="/category/all"
                   className="inline-flex h-12 items-center justify-center rounded-none bg-primary px-10 text-sm font-bold text-primary-foreground shadow-2xl transition-all hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring hover:scale-105 active:scale-95 uppercase tracking-widest"
@@ -52,7 +52,7 @@ export default async function Home() {
             </h2>
             <div className="w-16 h-1 bg-primary mb-6"></div>
             <p className="text-sm font-mono tracking-widest text-muted-foreground max-w-2xl not-italic lowercase">
-              limited pieces designed for the technical mind. monochrome precision.
+              piezas limitadas diseñadas para la mente técnica. precisión monocromática.
             </p>
           </div>
 

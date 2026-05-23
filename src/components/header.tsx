@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { Menu } from "lucide-react"
+import { Menu, Car } from "lucide-react"
 import { ThemeToggle } from "./theme-toggle"
 import { CartIcon } from "./cart-icon"
 import { MobileMenu } from "./mobile-menu"
@@ -64,6 +64,10 @@ export async function Header() {
               <UserButton />
             )}
           </div>
+          
+          <Link href="/garage" className="md:hidden p-2 text-foreground hover:text-primary transition-colors flex items-center justify-center" title="Nuestro Garage">
+            <Car className="w-5 h-5" />
+          </Link>
           
           <CartIcon />
           

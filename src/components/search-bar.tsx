@@ -25,7 +25,7 @@ export function SearchBar() {
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Buscar shampoo, cremas, colonias..."
+          placeholder="Buscar stickers, poleras, accesorios..."
           className="h-full w-full outline-none bg-transparent text-base pr-4 text-foreground placeholder:text-muted-foreground"
         />
         <button 
