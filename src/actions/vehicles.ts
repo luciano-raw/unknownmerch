@@ -5,6 +5,7 @@ import { createClient } from "@supabase/supabase-js"
 import { prisma } from "@/lib/prisma"
 import { v4 as uuidv4 } from "uuid"
 import sharp from "sharp"
+import { createAuditLog } from "./audit"
 
 export async function createVehicle(formData: FormData) {
   try {
@@ -83,6 +84,11 @@ export async function createVehicle(formData: FormData) {
         status
       }
     })
+
+    await createAuditLog(
+      "CREATE_VEHICLE",
+      `Creado vehículo '${brand} ${model}' (${year}) con suspensión '${suspension}'`
+    )
 
     revalidatePath("/garage")
     revalidatePath("/admin/garage")
@@ -169,6 +175,11 @@ export async function updateVehicle(id: string, formData: FormData) {
       data: updateData
     })
 
+    await createAuditLog(
+      "UPDATE_VEHICLE",
+      `Actualizado vehículo '${brand} ${model}' (ID: ${id})`
+    )
+
     revalidatePath("/garage")
     revalidatePath("/admin/garage")
     return vehicle
@@ -191,7 +202,13 @@ export async function getVehicles() {
 
 export async function deleteVehicle(id: string) {
   try {
+    const vehicle = await prisma.vehicle.findUnique({ where: { id } })
+    const vehicleName = vehicle ? `${vehicle.brand} ${vehicle.model}` : id
     await prisma.vehicle.delete({ where: { id } })
+    await createAuditLog(
+      "DELETE_VEHICLE",
+      `Eliminado vehículo '${vehicleName}' (ID: ${id})`
+    )
     revalidatePath("/garage")
     revalidatePath("/admin/garage")
   } catch (error) {
@@ -202,10 +219,16 @@ export async function deleteVehicle(id: string) {
 
 export async function updateVehicleStatus(id: string, status: string) {
   try {
+    const vehicle = await prisma.vehicle.findUnique({ where: { id } })
+    const vehicleName = vehicle ? `${vehicle.brand} ${vehicle.model}` : id
     await prisma.vehicle.update({
       where: { id },
       data: { status }
     })
+    await createAuditLog(
+      "UPDATE_VEHICLE_STATUS",
+      `Cambiado estado de vehículo '${vehicleName}' a '${status}'`
+    )
     revalidatePath("/garage")
     revalidatePath("/admin/garage")
   } catch (error) {

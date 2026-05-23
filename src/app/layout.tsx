@@ -4,9 +4,11 @@ import { ClerkProvider } from "@clerk/nextjs";
 import { currentUser } from "@clerk/nextjs/server";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Header } from "@/components/header";
-import { ChatWidget } from "@/components/chat-widget";
+// import { ChatWidget } from "@/components/chat-widget";
 import { DiscountProvider } from "@/components/discount-provider";
 import { OrganizationSchema } from "@/components/json-ld";
+import { Suspense } from "react";
+import { AnalyticsTracker } from "@/components/analytics-tracker";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -95,10 +97,13 @@ export default async function RootLayout({
         <ClerkProvider>
           <ThemeProvider>
             <DiscountProvider discount={discount} />
+            <Suspense fallback={null}>
+              <AnalyticsTracker />
+            </Suspense>
             <Header />
             {children}
             <OrganizationSchema />
-            <ChatWidget />
+            {/* <ChatWidget /> */}
           </ThemeProvider>
         </ClerkProvider>
       </body>

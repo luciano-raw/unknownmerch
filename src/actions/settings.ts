@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma"
 import { createClient } from "@supabase/supabase-js"
 import { v4 as uuidv4 } from "uuid"
 import { revalidatePath } from "next/cache"
+import { createAuditLog } from "./audit"
 
 export async function getStoreSettings() {
   const settings = await prisma.storeSettings.findUnique({
@@ -65,6 +66,11 @@ export async function updateStoreSettings(formData: FormData) {
         whatsappNumber: whatsappNumber?.trim() || "56930531304"
       }
     })
+
+    await createAuditLog(
+      "UPDATE_SETTINGS",
+      `Actualizada la configuración global (Aviso: ${storeNotice ? `'${storeNotice}'` : 'desactivado'}, Banner Activo: ${bannerIsActive}, WhatsApp: ${whatsappNumber})`
+    )
 
     revalidatePath("/")
     revalidatePath("/admin/settings")

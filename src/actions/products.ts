@@ -5,6 +5,7 @@ import { createClient } from "@supabase/supabase-js"
 import { prisma } from "@/lib/prisma"
 import { v4 as uuidv4 } from "uuid"
 import sharp from "sharp"
+import { createAuditLog } from "./audit"
 
 export async function createProduct(formData: FormData) {
   try {
@@ -88,6 +89,11 @@ export async function createProduct(formData: FormData) {
         images: imageUrls
       }
     })
+
+    await createAuditLog(
+      "CREATE_PRODUCT",
+      `Creado el producto '${name}' con precio $${price} y stock ${stock}`
+    )
 
     revalidatePath("/admin/products")
     revalidatePath("/")
@@ -178,6 +184,11 @@ export async function updateProduct(id: string, formData: FormData) {
       data: updateData
     })
 
+    await createAuditLog(
+      "UPDATE_PRODUCT",
+      `Actualizado el producto '${name}' (ID: ${id}) con precio $${price} y stock ${stock}`
+    )
+
     revalidatePath("/admin/products")
     revalidatePath("/")
     revalidatePath(`/product/${id}`)
@@ -195,16 +206,33 @@ export async function getProducts() {
 }
 
 export async function deleteProduct(id: string) {
-  await prisma.product.delete({ where: { id } })
-  revalidatePath("/admin/products")
+  try {
+    const product = await prisma.product.findUnique({ where: { id } })
+    const productName = product ? product.name : id
+    await prisma.product.delete({ where: { id } })
+    await createAuditLog(
+      "DELETE_PRODUCT",
+      `Eliminado el producto '${productName}' (ID: ${id})`
+    )
+    revalidatePath("/admin/products")
+  } catch (error: any) {
+    console.error(error)
+    throw new Error(error.message || "Failed to delete product")
+  }
 }
 
 export async function updateProductStock(id: string, stock: number) {
   try {
+    const product = await prisma.product.findUnique({ where: { id } })
+    const productName = product ? product.name : id
     await prisma.product.update({
       where: { id },
       data: { stock }
     })
+    await createAuditLog(
+      "UPDATE_STOCK",
+      `Actualizado stock del producto '${productName}' a ${stock}`
+    )
     revalidatePath("/admin/inventory")
     revalidatePath("/") // To update main store availability if needed
     revalidatePath(`/product/${id}`)

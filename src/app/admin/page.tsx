@@ -1,13 +1,13 @@
-import { Package, Users, Settings, ClipboardList, Car } from "lucide-react"
+import { Package, Users, Settings, ClipboardList, Car, BarChart3 } from "lucide-react"
 import Link from "next/link"
 
 export default function AdminDashboardPage() {
   return (
     <div className="flex flex-col min-h-screen bg-background">
-      <main className="flex-1 container mx-auto px-4 py-8 max-w-5xl">
+      <main className="flex-1 container mx-auto px-4 py-8 max-w-6xl">
         <h1 className="text-3xl font-bold mb-8 text-primary">Panel de Administración</h1>
         
-        <div className="grid md:grid-cols-2 gap-6">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           <div className="p-6 border rounded-xl bg-card shadow-sm hover:shadow-md transition-shadow">
             <div className="w-12 h-12 rounded-full bg-primary/10 text-primary flex items-center justify-center mb-4">
               <Package className="w-6 h-6" />
@@ -68,8 +68,21 @@ export default function AdminDashboardPage() {
             <p className="text-muted-foreground mb-4">
               Administra los vehículos de los miembros del club y de la comunidad.
             </p>
-            <Link href="/admin/garage" className="block text-center w-full py-2 bg-primary text-primary-foreground font-medium rounded-md hover:bg-primary/90 transition-colors shadow-sm">
+            <Link href="/admin/garage" className="block text-center w-full py-2 bg-secondary text-secondary-foreground font-medium rounded-md hover:bg-secondary/80 transition-colors">
               Gestionar Autos
+            </Link>
+          </div>
+
+          <div className="p-6 border rounded-xl bg-card shadow-sm hover:shadow-md transition-shadow">
+            <div className="w-12 h-12 rounded-full bg-primary/10 text-primary flex items-center justify-center mb-4">
+              <BarChart3 className="w-6 h-6" />
+            </div>
+            <h2 className="text-xl font-bold mb-2">Estadísticas</h2>
+            <p className="text-muted-foreground mb-4">
+              Analiza visitas, conversiones de clientes e historial de actividad administrativa.
+            </p>
+            <Link href="/admin/stats" className="block text-center w-full py-2 bg-primary text-primary-foreground font-medium rounded-md hover:bg-primary/95 transition-colors shadow-sm">
+              Ver Métricas
             </Link>
           </div>
         </div>

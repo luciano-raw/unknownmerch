@@ -79,3 +79,24 @@ model Vehicle {
   updatedAt     DateTime @updatedAt
 }
 
+model AnalyticsEvent {
+  id           String   @id @default(cuid())
+  type         String   // "pageview" or "click"
+  path         String   // e.g. "/product/xyz" or "/"
+  elementId    String?  // e.g. "add-to-cart", "instagram-link"
+  elementText  String?  // e.g. "Polera Black", "JR3 Wheels"
+  sessionToken String   // to identify unique visits / sessions
+  duration     Int?     // duration in seconds (for pageview exit tracking)
+  deviceType   String?  // "mobile" or "desktop"
+  createdAt    DateTime @default(now())
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  userId      String   // User Clerk ID
+  userEmail   String   // User email (to easily display it in the list)
+  action      String   // e.g., "CREATE_PRODUCT", "UPDATE_SETTINGS", "DELETE_VEHICLE", "VIP_DISCOUNT_UPDATE", "STOCK_UPDATE"
+  description String   // Detailed message e.g., "Creado producto 'Polera Unknown' con precio $15000"
+  createdAt   DateTime @default(now())
+}
+
