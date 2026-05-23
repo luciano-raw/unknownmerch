@@ -51,8 +51,8 @@ export default async function Home() {
               Exclusive Drops
             </h2>
             <div className="w-16 h-1 bg-primary mb-6"></div>
-            <p className="text-sm font-mono tracking-widest text-muted-foreground max-w-2xl not-italic lowercase">
-              piezas limitadas diseñadas para la mente técnica. precisión monocromática.
+            <p className="text-sm font-mono tracking-widest text-muted-foreground max-w-2xl not-italic">
+              artículos limitados diseñados para UNKNOWERS.
             </p>
           </div>
 
