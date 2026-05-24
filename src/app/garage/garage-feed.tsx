@@ -1,8 +1,9 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, Suspense } from "react"
+import { useSearchParams } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
-import { Shield, ChevronLeft, ChevronRight, Sparkles, Disc } from "lucide-react"
+import { Shield, ChevronLeft, ChevronRight, Sparkles, Disc, Share2, Link, Check } from "lucide-react"
 
 interface Vehicle {
   id: string
@@ -22,9 +23,52 @@ interface GarageFeedProps {
 }
 
 export default function GarageFeed({ vehicles }: GarageFeedProps) {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex flex-col items-center justify-center text-muted-foreground gap-4">
+        <Sparkles className="w-8 h-8 animate-pulse text-primary" />
+        <span className="text-sm font-semibold uppercase tracking-wider">Cargando Garage...</span>
+      </div>
+    }>
+      <GarageFeedContent vehicles={vehicles} />
+    </Suspense>
+  )
+}
+
+function GarageFeedContent({ vehicles }: GarageFeedProps) {
   const [activeTab, setActiveTab] = useState<"Club Member" | "Community">("Club Member")
+  const searchParams = useSearchParams()
+  const [highlightedVehicleId, setHighlightedVehicleId] = useState<string | null>(null)
 
   const filteredVehicles = vehicles.filter(v => v.status === activeTab)
+
+  useEffect(() => {
+    const vehicleId = searchParams.get("v")
+    if (vehicleId) {
+      const targetVehicle = vehicles.find(v => v.id === vehicleId)
+      if (targetVehicle) {
+        const tab = targetVehicle.status === "Club Member" ? "Club Member" : "Community"
+        setActiveTab(tab)
+        setHighlightedVehicleId(vehicleId)
+
+        const timer = setTimeout(() => {
+          const element = document.getElementById(`vehicle-${vehicleId}`)
+          if (element) {
+            element.scrollIntoView({ behavior: "smooth", block: "center" })
+          }
+        }, 300)
+
+        const highlightTimer = setTimeout(() => {
+          setHighlightedVehicleId(null)
+        }, 3000)
+
+        return () => {
+          clearTimeout(timer)
+          clearTimeout(highlightTimer)
+        }
+      }
+    }
+  }, [searchParams, vehicles])
 
   return (
     <div className="min-h-screen bg-background text-foreground py-12 px-4 md:px-6 max-w-7xl mx-auto">
@@ -101,6 +145,7 @@ export default function GarageFeed({ vehicles }: GarageFeedProps) {
                   key={vehicle.id} 
                   vehicle={vehicle} 
                   isFeature={isFeature} 
+                  isHighlighted={highlightedVehicleId === vehicle.id}
                 />
               )
             })
@@ -111,8 +156,90 @@ export default function GarageFeed({ vehicles }: GarageFeedProps) {
   )
 }
 
-function VehicleCard({ vehicle, isFeature }: { vehicle: Vehicle; isFeature: boolean }) {
+function parseDescription(description: string): React.ReactNode {
+  if (!description) return null
+
+  const lines = description.split("\n")
+  const elements: React.ReactNode[] = []
+  let currentList: React.ReactNode[] = []
+
+  const renderInline = (text: string) => {
+    const parts = text.split(/(\*\*.*?\*\*)/g)
+    return parts.map((part, index) => {
+      if (part.startsWith("**") && part.endsWith("**")) {
+        return (
+          <strong key={index} className="font-extrabold text-foreground">
+            {part.slice(2, -2)}
+          </strong>
+        )
+      }
+      return part
+    })
+  }
+
+  const flushList = (key: string | number) => {
+    if (currentList.length > 0) {
+      elements.push(
+        <ul key={`list-${key}`} className="my-3 space-y-1.5 list-none pl-0">
+          {currentList}
+        </ul>
+      )
+      currentList = []
+    }
+  }
+
+  lines.forEach((line, index) => {
+    const trimmed = line.trim()
+
+    if (trimmed.startsWith("# ")) {
+      flushList(index)
+      const content = line.substring(line.indexOf("# ") + 2)
+      elements.push(
+        <h3 key={index} className="text-base font-black tracking-tight text-foreground border-b border-border/40 pb-1 mt-4 mb-2 first:mt-0">
+          {renderInline(content)}
+        </h3>
+      )
+    } else if (trimmed.startsWith("## ")) {
+      flushList(index)
+      const content = line.substring(line.indexOf("## ") + 3)
+      elements.push(
+        <h4 key={index} className="text-sm font-bold text-primary mt-3 mb-1.5 first:mt-0">
+          {renderInline(content)}
+        </h4>
+      )
+    } else if (trimmed.startsWith("- ") || trimmed.startsWith("* ")) {
+      const isDash = trimmed.startsWith("- ")
+      const content = line.substring(isDash ? line.indexOf("- ") + 2 : line.indexOf("* ") + 2)
+      currentList.push(
+        <li key={`li-${index}`} className="flex items-start gap-2 text-xs md:text-sm text-muted-foreground/90">
+          <span className="text-primary mt-1.5 select-none text-[10px]">•</span>
+          <span className="flex-1">{renderInline(content)}</span>
+        </li>
+      )
+    } else {
+      if (trimmed === "") {
+        flushList(index)
+        elements.push(<div key={`space-${index}`} className="h-2" />)
+      } else {
+        flushList(index)
+        elements.push(
+          <p key={index} className="text-xs md:text-sm text-muted-foreground/90 leading-relaxed mb-1.5">
+            {renderInline(line)}
+          </p>
+        )
+      }
+    }
+  })
+
+  flushList("final")
+
+  return <div className="space-y-1">{elements}</div>
+}
+
+function VehicleCard({ vehicle, isFeature, isHighlighted }: { vehicle: Vehicle; isFeature: boolean; isHighlighted: boolean }) {
   const [currentImgIndex, setCurrentImgIndex] = useState(0)
+  const [isShareOpen, setIsShareOpen] = useState(false)
+  const [copied, setCopied] = useState(false)
 
   const handleNextImage = (e: React.MouseEvent) => {
     e.preventDefault()
@@ -132,17 +259,43 @@ function VehicleCard({ vehicle, isFeature }: { vehicle: Vehicle; isFeature: bool
     setCurrentImgIndex(index)
   }
 
+  const handleCopyLink = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    const shareUrl = `${window.location.origin}/garage?v=${vehicle.id}`
+    navigator.clipboard.writeText(shareUrl).then(() => {
+      setCopied(true)
+      setTimeout(() => {
+        setCopied(false)
+        setIsShareOpen(false)
+      }, 1500)
+    })
+  }
+
+  const handleShareWhatsApp = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    const shareUrl = `${window.location.origin}/garage?v=${vehicle.id}`
+    const text = `🔥 ¡Mira esta tremenda preparación en *UNKNOWN CLUB*! 🚗\n\n*${vehicle.brand} ${vehicle.model} (${vehicle.year})*\n🛠️ *Suspensión:* ${vehicle.suspension}${vehicle.instagram ? `\n📱 *Instagram:* @${vehicle.instagram.replace('@', '')}` : ''}\n\n👉 Ver fotos y specs completas aquí: ${shareUrl}`
+
+    window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank')
+    setIsShareOpen(false)
+  }
+
   return (
     <motion.div
       layout
+      id={`vehicle-${vehicle.id}`}
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.95 }}
       transition={{ duration: 0.4 }}
-      className={`group relative overflow-hidden rounded-2xl border bg-card/60 backdrop-blur-sm transition-all duration-500 hover:shadow-2xl hover:-translate-y-1.5 flex flex-col justify-between ${
-        isFeature 
-          ? "md:col-span-2 border-primary/20 shadow-[0_0_20px_rgba(255,255,255,0.02)]" 
-          : "border-border/80"
+      className={`group relative overflow-hidden rounded-2xl border bg-card/60 backdrop-blur-sm transition-all duration-500 flex flex-col justify-between ${
+        isHighlighted
+          ? "ring-2 ring-amber-500 shadow-[0_0_30px_rgba(245,158,11,0.5)] border-amber-500/80 scale-[1.01]"
+          : isFeature 
+            ? "md:col-span-2 border-primary/20 shadow-[0_0_20px_rgba(255,255,255,0.02)] hover:-translate-y-1.5 hover:shadow-2xl" 
+            : "border-border/80 hover:-translate-y-1.5 hover:shadow-2xl"
       }`}
     >
       {/* Visual Badge overlay */}
@@ -157,6 +310,70 @@ function VehicleCard({ vehicle, isFeature }: { vehicle: Vehicle; isFeature: bool
         <span className="px-3 py-1 rounded-full text-[10px] font-bold bg-black/60 backdrop-blur text-white">
           {vehicle.suspension}
         </span>
+      </div>
+
+      {/* Share Button & Dropdown */}
+      <div className="absolute top-4 right-4 z-20">
+        <button
+          onClick={(e) => {
+            e.preventDefault()
+            e.stopPropagation()
+            setIsShareOpen(!isShareOpen)
+          }}
+          className="p-2 rounded-full bg-black/60 hover:bg-black/80 text-white backdrop-blur border border-white/10 shadow-lg transition-all duration-300 hover:scale-105"
+          aria-label="Compartir vehículo"
+        >
+          <Share2 className="w-4 h-4" />
+        </button>
+
+        <AnimatePresence>
+          {isShareOpen && (
+            <>
+              {/* Overlay to close the dropdown when clicking outside */}
+              <div 
+                className="fixed inset-0 z-10" 
+                onClick={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  setIsShareOpen(false)
+                }}
+              />
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                transition={{ duration: 0.2 }}
+                className="absolute right-0 mt-2 w-48 rounded-xl border border-white/10 bg-black/80 backdrop-blur-md shadow-2xl p-1.5 z-20 flex flex-col gap-1"
+              >
+                <button
+                  onClick={handleCopyLink}
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg text-left text-xs text-white hover:bg-white/10 transition-colors w-full"
+                >
+                  {copied ? (
+                    <>
+                      <Check className="w-3.5 h-3.5 text-emerald-400" />
+                      <span className="text-emerald-400 font-bold">¡Copiado!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Link className="w-3.5 h-3.5" />
+                      <span>Copiar enlace directo</span>
+                    </>
+                  )}
+                </button>
+                <button
+                  onClick={handleShareWhatsApp}
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg text-left text-xs text-white hover:bg-white/10 transition-colors w-full"
+                >
+                  <svg className="w-3.5 h-3.5 fill-current text-emerald-400" viewBox="0 0 24 24">
+                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L0 24l6.335-1.662c1.746.953 3.71 1.458 5.704 1.459h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
+                  </svg>
+                  <span>Compartir en WhatsApp</span>
+                </button>
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
       </div>
 
       <div className={`flex flex-col ${isFeature ? "md:flex-row h-full" : ""}`}>
@@ -240,9 +457,9 @@ function VehicleCard({ vehicle, isFeature }: { vehicle: Vehicle; isFeature: bool
               </a>
             )}
 
-            <p className="text-sm text-muted-foreground/90 leading-relaxed line-clamp-3">
-              {vehicle.description}
-            </p>
+            <div className="text-sm text-muted-foreground/90 leading-relaxed line-clamp-3">
+              {parseDescription(vehicle.description)}
+            </div>
           </div>
 
           <div className="border-t border-border/60 pt-4 mt-5 flex justify-between items-center text-xs font-bold uppercase tracking-wider text-muted-foreground">

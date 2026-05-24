@@ -310,6 +310,9 @@ export function VehicleForm({ initialData }: { initialData?: any }) {
                 defaultValue={initialData?.description} 
                 placeholder="Ej: Llantas JR3, Línea de escape de 2.5, Inducción HKS, etc..."
               />
+              <p className="mt-1.5 text-xs text-muted-foreground/80">
+                Tip: Usa # para Títulos, ## para Subtítulos, - para listas y **texto** para negrita.
+              </p>
             </div>
           </div>
 
