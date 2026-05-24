@@ -17,53 +17,101 @@ export async function createVehicle(formData: FormData) {
     const description = formData.get("description") as string
     const status = (formData.get("status") as string) || "Community"
     const imagePosition = (formData.get("imagePosition") as string) || "center"
-    const imageFiles = formData.getAll("images") as File[]
 
     let imageUrls: string[] = []
 
+    const imageLayoutStr = formData.get("imageLayout") as string
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
     const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
-    // Filter valid images and limit to 4 max
-    const validImages = imageFiles.filter(f => f && f.size > 0).slice(0, 4)
-
-    if (validImages.length > 0 && supabaseUrl && supabaseServiceKey) {
+    if (imageLayoutStr && supabaseUrl && supabaseServiceKey) {
+      const layout = JSON.parse(imageLayoutStr) as string[]
+      const newImages = formData.getAll("newImages") as File[]
       const supabase = createClient(supabaseUrl, supabaseServiceKey)
-      
-      for (const image of validImages) {
-        if (image.size > 10 * 1024 * 1024) {
-          throw new Error(`La imagen ${image.name} supera el tamaño máximo de 10MB.`)
+
+      for (const item of layout) {
+        if (item.startsWith("NEW_")) {
+          const index = parseInt(item.replace("NEW_", ""), 10)
+          const image = newImages[index]
+          if (image && image.size > 0) {
+            if (image.size > 10 * 1024 * 1024) {
+              throw new Error(`La imagen ${image.name} supera el tamaño máximo de 10MB.`)
+            }
+
+            const arrBuffer = await image.arrayBuffer()
+            const buffer = Buffer.from(new Uint8Array(arrBuffer))
+
+            // Compress: quality 75, max width 1400px WebP
+            const optimizedBuffer = await sharp(buffer)
+              .resize(1400, null, { fit: "inside", withoutEnlargement: true })
+              .webp({ quality: 75, effort: 4 })
+              .toBuffer()
+
+            const fileName = `vehicles/${uuidv4()}.webp`
+
+            const { error } = await supabase.storage
+              .from('products')
+              .upload(fileName, optimizedBuffer, {
+                contentType: 'image/webp',
+                upsert: false
+              })
+
+            if (error) {
+              console.error("Supabase Upload Error:", error)
+              throw new Error("Error al subir una de las imágenes")
+            }
+
+            const { data: { publicUrl } } = supabase.storage
+              .from('products')
+              .getPublicUrl(fileName)
+              
+            imageUrls.push(publicUrl)
+          }
+        } else {
+          imageUrls.push(item)
         }
+      }
+    } else {
+      // Fallback to original flow
+      const imageFiles = formData.getAll("images") as File[]
+      const validImages = imageFiles.filter(f => f && f.size > 0).slice(0, 4)
 
-        const arrBuffer = await image.arrayBuffer()
-        const buffer = Buffer.from(new Uint8Array(arrBuffer))
+      if (validImages.length > 0 && supabaseUrl && supabaseServiceKey) {
+        const supabase = createClient(supabaseUrl, supabaseServiceKey)
+        
+        for (const image of validImages) {
+          if (image.size > 10 * 1024 * 1024) {
+            throw new Error(`La imagen ${image.name} supera el tamaño máximo de 10MB.`)
+          }
 
-        // Compress: quality 75, max width 1400px WebP
-        const optimizedBuffer = await sharp(buffer)
-          .resize(1400, null, { fit: "inside", withoutEnlargement: true })
-          .webp({ quality: 75, effort: 4 })
-          .toBuffer()
+          const arrBuffer = await image.arrayBuffer()
+          const buffer = Buffer.from(new Uint8Array(arrBuffer))
 
-        const fileName = `vehicles/${uuidv4()}.webp`
+          const optimizedBuffer = await sharp(buffer)
+            .resize(1400, null, { fit: "inside", withoutEnlargement: true })
+            .webp({ quality: 75, effort: 4 })
+            .toBuffer()
 
-        // Try 'products' bucket, if not, fallback to 'vehicles' or upload
-        const { error } = await supabase.storage
-          .from('products')
-          .upload(fileName, optimizedBuffer, {
-            contentType: 'image/webp',
-            upsert: false
-          })
+          const fileName = `vehicles/${uuidv4()}.webp`
 
-        if (error) {
-          console.error("Supabase Upload Error:", error)
-          throw new Error("Error al subir una de las imágenes")
+          const { error } = await supabase.storage
+            .from('products')
+            .upload(fileName, optimizedBuffer, {
+              contentType: 'image/webp',
+              upsert: false
+            })
+
+          if (error) {
+            console.error("Supabase Upload Error:", error)
+            throw new Error("Error al subir una de las imágenes")
+          }
+
+          const { data: { publicUrl } } = supabase.storage
+            .from('products')
+            .getPublicUrl(fileName)
+            
+          imageUrls.push(publicUrl)
         }
-
-        const { data: { publicUrl } } = supabase.storage
-          .from('products')
-          .getPublicUrl(fileName)
-          
-        imageUrls.push(publicUrl)
       }
     }
 
@@ -109,39 +157,78 @@ export async function updateVehicle(id: string, formData: FormData) {
     const description = formData.get("description") as string
     const status = (formData.get("status") as string) || "Community"
     const imagePosition = (formData.get("imagePosition") as string) || "center"
-    const imageFiles = formData.getAll("images") as File[]
 
     let imageUrls: string[] = []
 
+    const imageLayoutStr = formData.get("imageLayout") as string
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
     const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
-    const validImages = imageFiles.filter(f => f && f.size > 0).slice(0, 4)
-
-    if (validImages.length > 0 && supabaseUrl && supabaseServiceKey) {
+    if (imageLayoutStr && supabaseUrl && supabaseServiceKey) {
+      const layout = JSON.parse(imageLayoutStr) as string[]
+      const newImages = formData.getAll("newImages") as File[]
       const supabase = createClient(supabaseUrl, supabaseServiceKey)
-      
-      for (const image of validImages) {
-        if (image.size > 10 * 1024 * 1024) throw new Error(`La imagen ${image.name} supera los 10MB.`)
 
-        const arrBuffer = await image.arrayBuffer()
-        const buffer = Buffer.from(new Uint8Array(arrBuffer))
+      for (const item of layout) {
+        if (item.startsWith("NEW_")) {
+          const index = parseInt(item.replace("NEW_", ""), 10)
+          const image = newImages[index]
+          if (image && image.size > 0) {
+            if (image.size > 10 * 1024 * 1024) throw new Error(`La imagen ${image.name} supera los 10MB.`)
 
-        const optimizedBuffer = await sharp(buffer)
-          .resize(1400, null, { fit: "inside", withoutEnlargement: true })
-          .webp({ quality: 75, effort: 4 })
-          .toBuffer()
+            const arrBuffer = await image.arrayBuffer()
+            const buffer = Buffer.from(new Uint8Array(arrBuffer))
 
-        const fileName = `vehicles/${uuidv4()}.webp`
+            const optimizedBuffer = await sharp(buffer)
+              .resize(1400, null, { fit: "inside", withoutEnlargement: true })
+              .webp({ quality: 75, effort: 4 })
+              .toBuffer()
 
-        const { error } = await supabase.storage
-          .from('products')
-          .upload(fileName, optimizedBuffer, { contentType: 'image/webp', upsert: false })
+            const fileName = `vehicles/${uuidv4()}.webp`
 
-        if (error) throw new Error("Error al subir una imagen")
+            const { error } = await supabase.storage
+              .from('products')
+              .upload(fileName, optimizedBuffer, { contentType: 'image/webp', upsert: false })
 
-        const { data: { publicUrl } } = supabase.storage.from('products').getPublicUrl(fileName)
-        imageUrls.push(publicUrl)
+            if (error) throw new Error("Error al subir una imagen")
+
+            const { data: { publicUrl } } = supabase.storage.from('products').getPublicUrl(fileName)
+            imageUrls.push(publicUrl)
+          }
+        } else {
+          imageUrls.push(item)
+        }
+      }
+    } else {
+      // Fallback to original behavior
+      const imageFiles = formData.getAll("images") as File[]
+      const validImages = imageFiles.filter(f => f && f.size > 0).slice(0, 4)
+
+      if (validImages.length > 0 && supabaseUrl && supabaseServiceKey) {
+        const supabase = createClient(supabaseUrl, supabaseServiceKey)
+        
+        for (const image of validImages) {
+          if (image.size > 10 * 1024 * 1024) throw new Error(`La imagen ${image.name} supera los 10MB.`)
+
+          const arrBuffer = await image.arrayBuffer()
+          const buffer = Buffer.from(new Uint8Array(arrBuffer))
+
+          const optimizedBuffer = await sharp(buffer)
+            .resize(1400, null, { fit: "inside", withoutEnlargement: true })
+            .webp({ quality: 75, effort: 4 })
+            .toBuffer()
+
+          const fileName = `vehicles/${uuidv4()}.webp`
+
+          const { error } = await supabase.storage
+            .from('products')
+            .upload(fileName, optimizedBuffer, { contentType: 'image/webp', upsert: false })
+
+          if (error) throw new Error("Error al subir una imagen")
+
+          const { data: { publicUrl } } = supabase.storage.from('products').getPublicUrl(fileName)
+          imageUrls.push(publicUrl)
+        }
       }
     }
 
@@ -158,16 +245,20 @@ export async function updateVehicle(id: string, formData: FormData) {
 
     if (imageUrls.length > 0) {
       updateData.images = imageUrls
-    }
-
-    const existingImagesOrder = formData.get("existingImagesOrder") as string
-    if (existingImagesOrder && imageUrls.length === 0) {
-      try {
-        const parsedOrder = JSON.parse(existingImagesOrder)
-        if (Array.isArray(parsedOrder) && parsedOrder.length > 0) {
-          updateData.images = parsedOrder
-        }
-      } catch (e) {}
+    } else if (imageLayoutStr) {
+      // If layout is explicitly sent and resolved to 0 images, fallback to placeholder
+      updateData.images = ["/placeholder.jpg"]
+    } else {
+      // Old fallback behavior
+      const existingImagesOrder = formData.get("existingImagesOrder") as string
+      if (existingImagesOrder && imageUrls.length === 0) {
+        try {
+          const parsedOrder = JSON.parse(existingImagesOrder)
+          if (Array.isArray(parsedOrder) && parsedOrder.length > 0) {
+            updateData.images = parsedOrder
+          }
+        } catch (e) {}
+      }
     }
 
     const vehicle = await prisma.vehicle.update({

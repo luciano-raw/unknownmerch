@@ -1,38 +1,96 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { createVehicle, updateVehicle } from "@/actions/vehicles"
 import { useRouter } from "next/navigation"
-import { Image as ImageIcon, Star, Upload, Loader2, Sparkles } from "lucide-react"
+import { Image as ImageIcon, Star, Upload, Loader2, Sparkles, X } from "lucide-react"
 
 export function VehicleForm({ initialData }: { initialData?: any }) {
   const [loading, setLoading] = useState(false)
   const [loadingMessage, setLoadingMessage] = useState("Preparando datos del auto...")
   const [isDragging, setIsDragging] = useState(false)
   
-  const [selectedFiles, setSelectedFiles] = useState<File[]>([])
-  const [previewUrls, setPreviewUrls] = useState<string[]>([])
+  type FormImage = {
+    id: string
+    url: string
+    file?: File
+    isExisting: boolean
+  }
+
+  const [images, setImages] = useState<FormImage[]>(() => {
+    if (initialData?.images && Array.isArray(initialData.images)) {
+      return initialData.images.map((url: string, index: number) => ({
+        id: `existing-${index}-${url}`,
+        url,
+        isExisting: true
+      }))
+    }
+    return []
+  })
+  
   const [coverIndex, setCoverIndex] = useState<number>(0)
-  const [existingImages, setExistingImages] = useState<string[]>(initialData?.images || [])
-  const [existingCoverIndex, setExistingCoverIndex] = useState<number>(0)
   const [imagePosition, setImagePosition] = useState<string>(initialData?.imagePosition || "center")
   
   const router = useRouter()
+  const imagesRef = useRef(images)
 
-  // Clean memory leaks
+  // Keep ref updated
   useEffect(() => {
-    return () => previewUrls.forEach(url => URL.revokeObjectURL(url))
-  }, [previewUrls])
+    imagesRef.current = images
+  }, [images])
+
+  // Clean memory leaks on unmount
+  useEffect(() => {
+    return () => {
+      imagesRef.current.forEach(img => {
+        if (!img.isExisting && img.url.startsWith("blob:")) {
+          URL.revokeObjectURL(img.url)
+        }
+      })
+    }
+  }, [])
+
+  const handleDeleteImage = (indexToDelete: number, e: React.MouseEvent) => {
+    e.stopPropagation()
+    const imageToDelete = images[indexToDelete]
+    if (!imageToDelete.isExisting && imageToDelete.url.startsWith("blob:")) {
+      URL.revokeObjectURL(imageToDelete.url)
+    }
+    
+    setImages(prev => {
+      const updated = prev.filter((_, i) => i !== indexToDelete)
+      return updated
+    })
+
+    if (coverIndex === indexToDelete) {
+      setCoverIndex(0)
+    } else if (coverIndex > indexToDelete) {
+      setCoverIndex(coverIndex - 1)
+    }
+  }
+
+  const addFiles = (files: FileList | File[]) => {
+    const filesArray = Array.from(files)
+    const spacesLeft = 4 - images.length
+    if (spacesLeft <= 0) {
+      alert("Ya tienes el límite máximo de 4 imágenes.")
+      return
+    }
+    
+    const filesToProcess = filesArray.slice(0, spacesLeft)
+    const newFormImages: FormImage[] = filesToProcess.map((file) => ({
+      id: `new-${Math.random().toString(36).substring(2, 9)}-${file.name}`,
+      url: URL.createObjectURL(file),
+      file,
+      isExisting: false
+    }))
+    
+    setImages(prev => [...prev, ...newFormImages])
+  }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
-      const filesArray = Array.from(e.target.files).slice(0, 4)
-      setSelectedFiles(filesArray)
-      
-      previewUrls.forEach(url => URL.revokeObjectURL(url))
-      const urls = filesArray.map(file => URL.createObjectURL(file))
-      setPreviewUrls(urls)
-      setCoverIndex(0)
+      addFiles(e.target.files)
     }
   }
 
@@ -49,13 +107,7 @@ export function VehicleForm({ initialData }: { initialData?: any }) {
     e.preventDefault()
     setIsDragging(false)
     if (e.dataTransfer.files) {
-      const filesArray = Array.from(e.dataTransfer.files).slice(0, 4)
-      setSelectedFiles(filesArray)
-      
-      previewUrls.forEach(url => URL.revokeObjectURL(url))
-      const urls = filesArray.map(file => URL.createObjectURL(file))
-      setPreviewUrls(urls)
-      setCoverIndex(0)
+      addFiles(e.dataTransfer.files)
     }
   }
 
@@ -76,19 +128,31 @@ export function VehicleForm({ initialData }: { initialData?: any }) {
     try {
       const finalFormData = new FormData()
       rawFormData.forEach((value, key) => {
-        if (key !== "images") finalFormData.append(key, value)
+        if (key !== "images" && key !== "newImages" && key !== "imageLayout") {
+          finalFormData.append(key, value)
+        }
       })
 
-      if (selectedFiles.length > 0) {
-        // Enforce the cover image is at index 0
-        finalFormData.append("images", selectedFiles[coverIndex])
-        selectedFiles.forEach((file, index) => {
-          if (index !== coverIndex) finalFormData.append("images", file)
-        })
-      } else if (initialData?.id && existingImages.length > 0) {
-        const rearrangedOld = [existingImages[existingCoverIndex], ...existingImages.filter((_, i) => i !== existingCoverIndex)]
-        finalFormData.append("existingImagesOrder", JSON.stringify(rearrangedOld))
-      }
+      // Rearrange so cover is at index 0
+      const rearranged = [
+        images[coverIndex],
+        ...images.filter((_, idx) => idx !== coverIndex)
+      ].filter(Boolean)
+
+      const imageLayout: string[] = []
+      let newImageCount = 0
+
+      rearranged.forEach((img) => {
+        if (img.isExisting) {
+          imageLayout.push(img.url)
+        } else if (img.file) {
+          imageLayout.push(`NEW_${newImageCount}`)
+          finalFormData.append("newImages", img.file)
+          newImageCount++
+        }
+      })
+
+      finalFormData.append("imageLayout", JSON.stringify(imageLayout))
 
       if (initialData?.id) {
         await updateVehicle(initialData.id, finalFormData)
@@ -288,58 +352,43 @@ export function VehicleForm({ initialData }: { initialData?: any }) {
               </div>
 
               {/* Styled Previews Grid */}
-              {(previewUrls.length > 0 || existingImages.length > 0) && (
+              {images.length > 0 && (
                 <div className="space-y-2">
                   <span className={labelClasses}>Distribución y Portada</span>
                   <div className="grid grid-cols-4 gap-2.5">
-                    {previewUrls.length > 0 
-                      ? previewUrls.map((url, index) => (
-                          <div 
-                            key={url} 
-                            className={`group relative aspect-square rounded-xl overflow-hidden border-2 transition-all duration-300 cursor-pointer ${
-                              index === coverIndex 
-                                ? "border-amber-400 ring-2 ring-amber-400/20 scale-[1.03] shadow-lg shadow-amber-400/10" 
-                                : "border-border opacity-70 hover:opacity-100"
-                            }`} 
-                            onClick={() => !loading && setCoverIndex(index)}
-                          >
-                            <div className="absolute inset-0 bg-cover" style={{ backgroundImage: `url(${url})`, backgroundPosition: index === coverIndex ? imagePosition : 'center' }} />
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60 group-hover:opacity-30 transition-opacity" />
-                            
-                            <div className="absolute top-1 right-1">
-                              <div className={`p-0.5 rounded-full ${index === coverIndex ? "bg-amber-400 text-amber-950" : "bg-black/50 text-white hover:bg-black/70"} transition-colors shadow-sm`}>
-                                <Star className={`w-3 h-3 ${index === coverIndex ? "fill-amber-950" : ""}`} />
-                              </div>
-                            </div>
-                            <div className="absolute bottom-1 left-1.5 text-[8px] font-bold text-white tracking-wider uppercase">
-                              {index === coverIndex ? "Portada" : `Foto ${index + 1}`}
-                            </div>
+                    {images.map((img, index) => (
+                      <div 
+                        key={img.id} 
+                        className={`group relative aspect-square rounded-xl overflow-hidden border-2 transition-all duration-300 cursor-pointer ${
+                          index === coverIndex 
+                            ? "border-amber-400 ring-2 ring-amber-400/20 scale-[1.03] shadow-lg shadow-amber-400/10" 
+                            : "border-border opacity-70 hover:opacity-100"
+                        }`} 
+                        onClick={() => !loading && setCoverIndex(index)}
+                      >
+                        <div className="absolute inset-0 bg-cover" style={{ backgroundImage: `url(${img.url})`, backgroundPosition: index === coverIndex ? imagePosition : 'center' }} />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60 group-hover:opacity-30 transition-opacity" />
+                        
+                        {/* Delete Button */}
+                        <button
+                          type="button"
+                          className="absolute top-1 left-1 p-1 bg-black/60 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:bg-red-600 hover:text-white"
+                          onClick={(e) => !loading && handleDeleteImage(index, e)}
+                          title="Eliminar imagen"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                        
+                        <div className="absolute top-1 right-1">
+                          <div className={`p-0.5 rounded-full ${index === coverIndex ? "bg-amber-400 text-amber-950" : "bg-black/50 text-white hover:bg-black/70"} transition-colors shadow-sm`}>
+                            <Star className={`w-3 h-3 ${index === coverIndex ? "fill-amber-950" : ""}`} />
                           </div>
-                        ))
-                      : existingImages.map((url, index) => (
-                          <div 
-                            key={url} 
-                            className={`group relative aspect-square rounded-xl overflow-hidden border-2 transition-all duration-300 cursor-pointer ${
-                              index === existingCoverIndex 
-                                ? "border-amber-400 ring-2 ring-amber-400/20 scale-[1.03] shadow-lg shadow-amber-400/10" 
-                                : "border-border opacity-70 hover:opacity-100"
-                            }`} 
-                            onClick={() => !loading && setExistingCoverIndex(index)}
-                          >
-                            <div className="absolute inset-0 bg-cover" style={{ backgroundImage: `url(${url})`, backgroundPosition: index === existingCoverIndex ? imagePosition : 'center' }} />
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60 group-hover:opacity-30 transition-opacity" />
-                            
-                            <div className="absolute top-1 right-1">
-                              <div className={`p-0.5 rounded-full ${index === existingCoverIndex ? "bg-amber-400 text-amber-950" : "bg-black/50 text-white hover:bg-black/70"} transition-colors shadow-sm`}>
-                                <Star className={`w-3 h-3 ${index === existingCoverIndex ? "fill-amber-950" : ""}`} />
-                              </div>
-                            </div>
-                            <div className="absolute bottom-1 left-1.5 text-[8px] font-bold text-white tracking-wider uppercase">
-                              {index === existingCoverIndex ? "Portada" : `Foto ${index + 1}`}
-                            </div>
-                          </div>
-                        ))
-                    }
+                        </div>
+                        <div className="absolute bottom-1 left-1.5 text-[8px] font-bold text-white tracking-wider uppercase">
+                          {index === coverIndex ? "Portada" : `Foto ${index + 1}`}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}
