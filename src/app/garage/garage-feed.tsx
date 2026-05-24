@@ -122,7 +122,7 @@ function GarageFeedContent({ vehicles }: GarageFeedProps) {
       {/* Asymmetric / Premium Grid */}
       <motion.div 
         layout
-        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8"
+        className="grid grid-cols-2 lg:grid-cols-3 gap-3 md:gap-8"
       >
         <AnimatePresence mode="popLayout">
           {filteredVehicles.length === 0 ? (
@@ -290,7 +290,7 @@ function VehicleCard({ vehicle, isFeature, isHighlighted }: { vehicle: Vehicle; 
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.95 }}
       transition={{ duration: 0.4 }}
-      className={`group relative overflow-hidden rounded-2xl border bg-card/60 backdrop-blur-sm transition-all duration-500 flex flex-col justify-between ${
+      className={`group relative overflow-hidden rounded-xl md:rounded-2xl border bg-card/60 backdrop-blur-sm transition-all duration-500 flex flex-col justify-between ${
         isHighlighted
           ? "ring-2 ring-amber-500 shadow-[0_0_30px_rgba(245,158,11,0.5)] border-amber-500/80 scale-[1.01]"
           : isFeature 
@@ -299,31 +299,31 @@ function VehicleCard({ vehicle, isFeature, isHighlighted }: { vehicle: Vehicle; 
       }`}
     >
       {/* Visual Badge overlay */}
-      <div className="absolute top-4 left-4 z-20 flex gap-2">
-        <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${
+      <div className="absolute top-2 left-2 md:top-4 md:left-4 z-20 flex flex-col sm:flex-row gap-1 md:gap-2">
+        <span className={`px-2 py-0.5 md:px-3 md:py-1 rounded-full text-[8px] md:text-[10px] font-black uppercase tracking-widest ${
           vehicle.status === "Club Member"
             ? "bg-primary text-primary-foreground shadow-[0_0_10px_rgba(255,255,255,0.2)]"
             : "bg-secondary/80 backdrop-blur text-secondary-foreground"
         }`}>
-          {vehicle.status === "Club Member" ? "★ Club Member" : "Community"}
+          {vehicle.status === "Club Member" ? "★ Club" : "Community"}
         </span>
-        <span className="px-3 py-1 rounded-full text-[10px] font-bold bg-black/60 backdrop-blur text-white">
+        <span className="px-2 py-0.5 md:px-3 md:py-1 rounded-full text-[8px] md:text-[10px] font-bold bg-black/60 backdrop-blur text-white">
           {vehicle.suspension}
         </span>
       </div>
 
       {/* Share Button & Dropdown */}
-      <div className="absolute top-4 right-4 z-20">
+      <div className="absolute top-2 right-2 md:top-4 md:right-4 z-20">
         <button
           onClick={(e) => {
             e.preventDefault()
             e.stopPropagation()
             setIsShareOpen(!isShareOpen)
           }}
-          className="p-2 rounded-full bg-black/60 hover:bg-black/80 text-white backdrop-blur border border-white/10 shadow-lg transition-all duration-300 hover:scale-105"
+          className="p-1.5 md:p-2 rounded-full bg-black/60 hover:bg-black/80 text-white backdrop-blur border border-white/10 shadow-lg transition-all duration-300 hover:scale-105"
           aria-label="Compartir vehículo"
         >
-          <Share2 className="w-4 h-4" />
+          <Share2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
         </button>
 
         <AnimatePresence>
@@ -378,7 +378,7 @@ function VehicleCard({ vehicle, isFeature, isHighlighted }: { vehicle: Vehicle; 
 
       <div className={`flex flex-col ${isFeature ? "md:flex-row h-full" : ""}`}>
         {/* Multi-Photo Viewer Slider Container */}
-        <div className={`relative overflow-hidden aspect-video bg-zinc-950 flex-shrink-0 ${
+        <div className={`relative overflow-hidden aspect-[4/3] md:aspect-video bg-zinc-950 flex-shrink-0 ${
           isFeature ? "md:w-1/2 md:aspect-auto md:min-h-[300px]" : "w-full"
         }`}>
           {/* Main Slide Image */}
@@ -398,29 +398,29 @@ function VehicleCard({ vehicle, isFeature, isHighlighted }: { vehicle: Vehicle; 
             <>
               <button
                 onClick={handlePrevImage}
-                className="absolute left-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/50 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 hover:bg-black/80"
+                className="absolute left-2 top-1/2 -translate-y-1/2 w-7 h-7 md:w-8 md:h-8 rounded-full bg-black/50 text-white flex items-center justify-center opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-300 hover:bg-black/80"
               >
-                <ChevronLeft className="w-5 h-5" />
+                <ChevronLeft className="w-4 h-4 md:w-5 md:h-5" />
               </button>
               <button
                 onClick={handleNextImage}
-                className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/50 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 hover:bg-black/80"
+                className="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 md:w-8 md:h-8 rounded-full bg-black/50 text-white flex items-center justify-center opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-300 hover:bg-black/80"
               >
-                <ChevronRight className="w-5 h-5" />
+                <ChevronRight className="w-4 h-4 md:w-5 md:h-5" />
               </button>
             </>
           )}
 
           {/* Dot Indicators */}
           {vehicle.images.length > 1 && (
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex gap-1.5">
+            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 flex gap-1">
               {vehicle.images.map((_, idx) => (
                 <button
                   key={idx}
                   onClick={(e) => handleDotClick(e, idx)}
-                  className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                  className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${
                     idx === currentImgIndex 
-                      ? "bg-white scale-125 w-4" 
+                      ? "bg-white scale-125 w-3" 
                       : "bg-white/40 hover:bg-white/70"
                   }`}
                 />
@@ -430,13 +430,13 @@ function VehicleCard({ vehicle, isFeature, isHighlighted }: { vehicle: Vehicle; 
         </div>
 
         {/* Content Box */}
-        <div className={`p-6 flex flex-col justify-between flex-1 ${isFeature ? "md:p-8" : ""}`}>
+        <div className={`p-3.5 md:p-6 flex flex-col justify-between flex-1 ${isFeature ? "md:p-8" : ""}`}>
           <div>
-            <div className="flex justify-between items-start mb-2">
-              <h2 className="text-xl font-black tracking-tight group-hover:text-primary transition-colors duration-300">
+            <div className="flex flex-col sm:flex-row gap-1 sm:gap-2 justify-between items-start mb-2">
+              <h2 className="text-sm md:text-xl font-black tracking-tight group-hover:text-primary transition-colors duration-300">
                 {vehicle.brand} {vehicle.model}
               </h2>
-              <span className="text-xs font-bold text-muted-foreground bg-secondary px-2 py-0.5 rounded">
+              <span className="text-[9px] md:text-xs font-bold text-muted-foreground bg-secondary px-1.5 py-0.5 rounded self-start sm:self-auto">
                 Año {vehicle.year}
               </span>
             </div>
@@ -446,9 +446,9 @@ function VehicleCard({ vehicle, isFeature, isHighlighted }: { vehicle: Vehicle; 
                 href={`https://instagram.com/${vehicle.instagram.replace('@', '')}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 text-xs text-primary/80 hover:text-primary transition-colors font-semibold mb-4"
+                className="inline-flex items-center gap-1 text-[10px] md:text-xs text-primary/80 hover:text-primary transition-colors font-semibold mb-2.5 md:mb-4"
               >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3 md:w-4 h-3 md:h-4">
                   <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
                   <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
                   <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
@@ -457,14 +457,14 @@ function VehicleCard({ vehicle, isFeature, isHighlighted }: { vehicle: Vehicle; 
               </a>
             )}
 
-            <div className="text-sm text-muted-foreground/90 leading-relaxed line-clamp-3">
+            <div className="text-[11px] md:text-sm text-muted-foreground/90 leading-relaxed line-clamp-3 md:line-clamp-none overflow-hidden">
               {parseDescription(vehicle.description)}
             </div>
           </div>
 
-          <div className="border-t border-border/60 pt-4 mt-5 flex justify-between items-center text-xs font-bold uppercase tracking-wider text-muted-foreground">
+          <div className="border-t border-border/60 pt-3 md:pt-4 mt-4 md:mt-5 flex flex-col xs:flex-row gap-1 justify-between items-start xs:items-center text-[9px] md:text-xs font-bold uppercase tracking-wider text-muted-foreground">
             <span>Suspensión: {vehicle.suspension}</span>
-            <span className="text-[10px] text-primary">Unknown Club</span>
+            <span className="text-[8px] md:text-[10px] text-primary self-end xs:self-auto">Unknown Club</span>
           </div>
         </div>
       </div>

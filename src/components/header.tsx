@@ -24,7 +24,7 @@ export async function Header() {
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
         <div className="flex items-center gap-6 md:gap-8">
           <Link href="/" className="flex items-center space-x-2">
-            <span className="text-xl font-bold tracking-tight text-primary uppercase italic">
+            <span className="text-xl font-bold tracking-tight text-primary uppercase italic hidden md:inline">
               Unknown Club
             </span>
           </Link>
@@ -46,6 +46,12 @@ export async function Header() {
               className="transition-colors hover:text-primary"
             >
               Garage
+            </Link>
+            <Link
+              href="/simulador"
+              className="transition-colors hover:text-primary"
+            >
+              Simulador
             </Link>
           </nav>
         </div>
@@ -83,6 +89,9 @@ export async function Header() {
               </Link>
               <Link href="/garage" className="text-xl font-black uppercase italic hover:text-primary transition-colors">
                 Garage
+              </Link>
+              <Link href="/simulador" className="text-xl font-black uppercase italic hover:text-primary transition-colors">
+                Simulador
               </Link>
               {isAdmin && (
                 <Link href="/admin" className="text-lg font-bold text-primary hover:text-primary/80 transition-colors border-b pb-2">
