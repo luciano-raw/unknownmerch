@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
-import { Shield, ChevronLeft, ChevronRight, Sparkles, Disc, Share2, Link, Check } from "lucide-react"
+import { Shield, ChevronLeft, ChevronRight, Sparkles, Disc, Share2, Link, Check, X } from "lucide-react"
 
 interface Vehicle {
   id: string
@@ -40,6 +40,7 @@ function GarageFeedContent({ vehicles }: GarageFeedProps) {
   const searchParams = useSearchParams()
   const [highlightedVehicleId, setHighlightedVehicleId] = useState<string | null>(null)
   const [shuffledVehicles, setShuffledVehicles] = useState<Vehicle[]>(vehicles)
+  const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null)
 
   const filteredVehicles = shuffledVehicles.filter(v => v.status === activeTab)
 
@@ -157,12 +158,23 @@ function GarageFeedContent({ vehicles }: GarageFeedProps) {
                   vehicle={vehicle} 
                   isFeature={isFeature} 
                   isHighlighted={highlightedVehicleId === vehicle.id}
+                  onSelect={() => setSelectedVehicle(vehicle)}
                 />
               )
             })
           )}
         </AnimatePresence>
       </motion.div>
+
+      {/* Vehicle Detail Drawer/Modal */}
+      <AnimatePresence>
+        {selectedVehicle && (
+          <VehicleDetailDrawer
+            vehicle={selectedVehicle}
+            onClose={() => setSelectedVehicle(null)}
+          />
+        )}
+      </AnimatePresence>
     </div>
   )
 }
@@ -246,7 +258,14 @@ function parseDescription(description: string): React.ReactNode {
   return <div className="space-y-1">{elements}</div>
 }
 
-function VehicleCard({ vehicle, isFeature, isHighlighted }: { vehicle: Vehicle; isFeature: boolean; isHighlighted: boolean }) {
+interface VehicleCardProps {
+  vehicle: Vehicle
+  isFeature: boolean
+  isHighlighted: boolean
+  onSelect: () => void
+}
+
+function VehicleCard({ vehicle, isFeature, isHighlighted, onSelect }: VehicleCardProps) {
   const [currentImgIndex, setCurrentImgIndex] = useState(0)
   const [isShareOpen, setIsShareOpen] = useState(false)
   const [copied, setCopied] = useState(false)
@@ -300,12 +319,13 @@ function VehicleCard({ vehicle, isFeature, isHighlighted }: { vehicle: Vehicle; 
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.95 }}
       transition={{ duration: 0.4 }}
-      className={`group relative overflow-hidden rounded-xl md:rounded-2xl border bg-card/60 backdrop-blur-sm transition-all duration-500 flex flex-col justify-between ${
+      onClick={onSelect}
+      className={`group relative overflow-hidden rounded-xl md:rounded-2xl border bg-card/60 backdrop-blur-sm transition-all duration-500 flex flex-col justify-between cursor-pointer ${
         isHighlighted
           ? "ring-2 ring-amber-500 shadow-[0_0_30px_rgba(245,158,11,0.5)] border-amber-500/80 scale-[1.01]"
           : isFeature 
-            ? "md:col-span-2 border-primary/20 shadow-[0_0_20px_rgba(255,255,255,0.02)] hover:-translate-y-1.5 hover:shadow-2xl" 
-            : "border-border/80 hover:-translate-y-1.5 hover:shadow-2xl"
+            ? "md:col-span-2 border-primary/20 shadow-[0_0_20px_rgba(255,255,255,0.02)] hover:-translate-y-1.5 hover:shadow-2xl hover:border-primary/45" 
+            : "border-border/80 hover:-translate-y-1.5 hover:shadow-2xl hover:border-primary/45"
       }`}
     >
       {/* Visual Badge overlay */}
@@ -456,6 +476,7 @@ function VehicleCard({ vehicle, isFeature, isHighlighted }: { vehicle: Vehicle; 
                 href={`https://instagram.com/${vehicle.instagram.replace('@', '')}`}
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
                 className="inline-flex items-center gap-1 text-[10px] md:text-xs text-primary/80 hover:text-primary transition-colors font-semibold mb-2.5 md:mb-4"
               >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3 md:w-4 h-3 md:h-4">
@@ -479,5 +500,286 @@ function VehicleCard({ vehicle, isFeature, isHighlighted }: { vehicle: Vehicle; 
         </div>
       </div>
     </motion.div>
+  )
+}
+
+interface VehicleDetailDrawerProps {
+  vehicle: Vehicle
+  onClose: () => void
+}
+
+function VehicleDetailDrawer({ vehicle, onClose }: VehicleDetailDrawerProps) {
+  const [currentImgIndex, setCurrentImgIndex] = useState(0)
+
+  const handleNextImage = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setCurrentImgIndex((prev) => (prev + 1) % vehicle.images.length)
+  }
+
+  const handlePrevImage = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setCurrentImgIndex((prev) => (prev - 1 + vehicle.images.length) % vehicle.images.length)
+  }
+
+  const handleDotClick = (e: React.MouseEvent, index: number) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setCurrentImgIndex(index)
+  }
+
+  // Prevent background scrolling when modal is open
+  useEffect(() => {
+    document.body.style.overflow = "hidden"
+    return () => {
+      document.body.style.overflow = "unset"
+    }
+  }, [])
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center">
+      {/* Background / Overlay */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        onClick={onClose}
+        className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 cursor-pointer"
+      />
+
+      {/* Mobile Drawer Panel */}
+      <motion.div
+        initial={{ y: "100%" }}
+        animate={{ y: 0 }}
+        exit={{ y: "100%" }}
+        transition={{ type: "spring", damping: 30, stiffness: 300 }}
+        className="fixed bottom-0 left-0 right-0 w-full rounded-t-3xl max-h-[85vh] overflow-y-auto bg-zinc-950 border-t border-zinc-800 p-6 z-50 shadow-[0_-10px_30px_rgba(0,0,0,0.5)] md:hidden flex flex-col gap-4"
+      >
+        <div className="w-12 h-1.5 bg-zinc-800 rounded-full mx-auto mb-2 flex-shrink-0" onClick={onClose} />
+        
+        {/* Close Button X */}
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 p-2 rounded-full bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
+          aria-label="Cerrar"
+        >
+          <X className="w-5 h-5" />
+        </button>
+
+        {/* Carousel / Image Viewer */}
+        <div className="relative overflow-hidden aspect-[4/3] rounded-2xl bg-zinc-900 border border-zinc-800 flex-shrink-0 mt-2">
+          <div
+            className="w-full h-full bg-cover"
+            style={{ 
+              backgroundImage: `url(${vehicle.images[currentImgIndex]})`,
+              backgroundPosition: vehicle.imagePosition || 'center'
+            }}
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent pointer-events-none" />
+
+          {/* Arrows */}
+          {vehicle.images.length > 1 && (
+            <>
+              <button
+                onClick={handlePrevImage}
+                className="absolute left-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-black/80 transition-colors"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+              <button
+                onClick={handleNextImage}
+                className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-black/80 transition-colors"
+              >
+                <ChevronRight className="w-5 h-5" />
+              </button>
+            </>
+          )}
+
+          {/* Dots */}
+          {vehicle.images.length > 1 && (
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex gap-1.5">
+              {vehicle.images.map((_, idx) => (
+                <button
+                  key={idx}
+                  onClick={(e) => handleDotClick(e, idx)}
+                  className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${
+                    idx === currentImgIndex 
+                      ? "bg-white scale-125 w-3" 
+                      : "bg-white/40 hover:bg-white/70"
+                  }`}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Header Info */}
+        <div className="flex flex-col gap-2">
+          <div className="flex flex-wrap gap-2 items-center">
+            <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
+              vehicle.status === "Club Member"
+                ? "bg-primary text-primary-foreground shadow-[0_0_10px_rgba(255,255,255,0.2)]"
+                : "bg-zinc-800 text-zinc-300"
+            }`}>
+              {vehicle.status === "Club Member" ? "★ Club Member" : "Community"}
+            </span>
+            <span className="px-2.5 py-0.5 rounded-full text-[9px] font-bold bg-zinc-800 text-zinc-300">
+              {vehicle.suspension}
+            </span>
+          </div>
+
+          <h2 className="text-2xl font-black tracking-tight text-white mt-1">
+            {vehicle.brand} {vehicle.model}
+            <span className="ml-2.5 text-sm font-medium text-zinc-500 bg-zinc-900/80 px-2 py-0.5 rounded border border-zinc-800/60">
+              {vehicle.year}
+            </span>
+          </h2>
+
+          {vehicle.instagram && (
+            <a
+              href={`https://instagram.com/${vehicle.instagram.replace('@', '')}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-xs text-primary hover:text-primary/80 transition-colors font-semibold self-start"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+                <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+                <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+                <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
+              </svg>
+              @{vehicle.instagram.replace('@', '')}
+            </a>
+          )}
+        </div>
+
+        {/* Description */}
+        <div className="border-t border-zinc-800/80 pt-4 text-sm text-zinc-300 max-h-[30vh] overflow-y-auto pr-1">
+          {parseDescription(vehicle.description)}
+        </div>
+
+        {/* Footer */}
+        <div className="border-t border-zinc-800/80 pt-4 mt-auto flex justify-between items-center text-[10px] font-bold uppercase tracking-wider text-zinc-500">
+          <span>Suspensión: {vehicle.suspension}</span>
+          <span className="text-primary">Unknown Club</span>
+        </div>
+      </motion.div>
+
+      {/* PC Modal Panel */}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95, x: "-50%", y: "-40%" }}
+        animate={{ opacity: 1, scale: 1, x: "-50%", y: "-50%" }}
+        exit={{ opacity: 0, scale: 0.95, x: "-50%", y: "-40%" }}
+        transition={{ type: "spring", damping: 25, stiffness: 200 }}
+        style={{ left: "50%", top: "50%" }}
+        className="hidden md:flex fixed w-full max-w-2xl rounded-2xl bg-zinc-950 border border-zinc-800 p-8 z-50 shadow-2xl flex-col gap-6"
+      >
+        {/* Close Button X */}
+        <button
+          onClick={onClose}
+          className="absolute top-6 right-6 p-2 rounded-full bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
+          aria-label="Cerrar"
+        >
+          <X className="w-5 h-5" />
+        </button>
+
+        {/* Carousel / Image Viewer */}
+        <div className="relative overflow-hidden aspect-video rounded-2xl bg-zinc-900 border border-zinc-800 flex-shrink-0">
+          <div
+            className="w-full h-full bg-cover"
+            style={{ 
+              backgroundImage: `url(${vehicle.images[currentImgIndex]})`,
+              backgroundPosition: vehicle.imagePosition || 'center'
+            }}
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent pointer-events-none" />
+
+          {/* Arrows */}
+          {vehicle.images.length > 1 && (
+            <>
+              <button
+                onClick={handlePrevImage}
+                className="absolute left-4 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-black/80 transition-colors"
+              >
+                <ChevronLeft className="w-6 h-6" />
+              </button>
+              <button
+                onClick={handleNextImage}
+                className="absolute right-4 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-black/80 transition-colors"
+              >
+                <ChevronRight className="w-6 h-6" />
+              </button>
+            </>
+          )}
+
+          {/* Dots */}
+          {vehicle.images.length > 1 && (
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex gap-1.5">
+              {vehicle.images.map((_, idx) => (
+                <button
+                  key={idx}
+                  onClick={(e) => handleDotClick(e, idx)}
+                  className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${
+                    idx === currentImgIndex 
+                      ? "bg-white scale-125 w-3" 
+                      : "bg-white/40 hover:bg-white/70"
+                  }`}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Header Info */}
+        <div className="flex flex-col gap-2">
+          <div className="flex gap-2 items-center">
+            <span className={`px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider ${
+              vehicle.status === "Club Member"
+                ? "bg-primary text-primary-foreground shadow-[0_0_10px_rgba(255,255,255,0.2)]"
+                : "bg-zinc-800 text-zinc-300"
+            }`}>
+              {vehicle.status === "Club Member" ? "★ Club Member" : "Community"}
+            </span>
+            <span className="px-3 py-1 rounded-full text-xs font-bold bg-zinc-800 text-zinc-300">
+              {vehicle.suspension}
+            </span>
+          </div>
+
+          <h2 className="text-3xl font-black tracking-tight text-white mt-1">
+            {vehicle.brand} {vehicle.model}
+            <span className="ml-3 text-base font-medium text-zinc-500 bg-zinc-900/80 px-2.5 py-0.5 rounded border border-zinc-800/60">
+              Año {vehicle.year}
+            </span>
+          </h2>
+
+          {vehicle.instagram && (
+            <a
+              href={`https://instagram.com/${vehicle.instagram.replace('@', '')}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-sm text-primary hover:text-primary/80 transition-colors font-semibold self-start"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+                <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+                <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+                <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
+              </svg>
+              @{vehicle.instagram.replace('@', '')}
+            </a>
+          )}
+        </div>
+
+        {/* Description */}
+        <div className="border-t border-zinc-800/80 pt-4 text-sm text-zinc-300 max-h-[25vh] overflow-y-auto pr-1">
+          {parseDescription(vehicle.description)}
+        </div>
+
+        {/* Footer */}
+        <div className="border-t border-zinc-800/80 pt-4 mt-2 flex justify-between items-center text-xs font-bold uppercase tracking-wider text-zinc-500">
+          <span>Suspensión: {vehicle.suspension}</span>
+          <span className="text-primary">Unknown Club</span>
+        </div>
+      </motion.div>
+    </div>
   )
 }
