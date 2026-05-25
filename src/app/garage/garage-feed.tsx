@@ -39,13 +39,24 @@ function GarageFeedContent({ vehicles }: GarageFeedProps) {
   const [activeTab, setActiveTab] = useState<"Club Member" | "Community">("Club Member")
   const searchParams = useSearchParams()
   const [highlightedVehicleId, setHighlightedVehicleId] = useState<string | null>(null)
+  const [shuffledVehicles, setShuffledVehicles] = useState<Vehicle[]>(vehicles)
 
-  const filteredVehicles = vehicles.filter(v => v.status === activeTab)
+  const filteredVehicles = shuffledVehicles.filter(v => v.status === activeTab)
+
+  useEffect(() => {
+    // Fisher-Yates shuffle
+    const shuffled = [...vehicles]
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1))
+      ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+    }
+    setShuffledVehicles(shuffled)
+  }, [vehicles])
 
   useEffect(() => {
     const vehicleId = searchParams.get("v")
     if (vehicleId) {
-      const targetVehicle = vehicles.find(v => v.id === vehicleId)
+      const targetVehicle = shuffledVehicles.find(v => v.id === vehicleId)
       if (targetVehicle) {
         const tab = targetVehicle.status === "Club Member" ? "Club Member" : "Community"
         setActiveTab(tab)
@@ -68,7 +79,7 @@ function GarageFeedContent({ vehicles }: GarageFeedProps) {
         }
       }
     }
-  }, [searchParams, vehicles])
+  }, [searchParams, shuffledVehicles])
 
   return (
     <div className="min-h-screen bg-background text-foreground py-12 px-4 md:px-6 max-w-7xl mx-auto">
@@ -159,7 +170,7 @@ function GarageFeedContent({ vehicles }: GarageFeedProps) {
 function parseDescription(description: string): React.ReactNode {
   if (!description) return null
 
-  const lines = description.split("\n")
+  const lines = description.replace(/\r/g, "").split("\n")
   const elements: React.ReactNode[] = []
   let currentList: React.ReactNode[] = []
 
@@ -193,7 +204,7 @@ function parseDescription(description: string): React.ReactNode {
 
     if (trimmed.startsWith("# ")) {
       flushList(index)
-      const content = line.substring(line.indexOf("# ") + 2)
+      const content = trimmed.substring(2).trim()
       elements.push(
         <h3 key={index} className="text-base font-black tracking-tight text-foreground border-b border-border/40 pb-1 mt-4 mb-2 first:mt-0">
           {renderInline(content)}
@@ -201,15 +212,14 @@ function parseDescription(description: string): React.ReactNode {
       )
     } else if (trimmed.startsWith("## ")) {
       flushList(index)
-      const content = line.substring(line.indexOf("## ") + 3)
+      const content = trimmed.substring(3).trim()
       elements.push(
         <h4 key={index} className="text-sm font-bold text-primary mt-3 mb-1.5 first:mt-0">
           {renderInline(content)}
         </h4>
       )
     } else if (trimmed.startsWith("- ") || trimmed.startsWith("* ")) {
-      const isDash = trimmed.startsWith("- ")
-      const content = line.substring(isDash ? line.indexOf("- ") + 2 : line.indexOf("* ") + 2)
+      const content = trimmed.substring(2).trim()
       currentList.push(
         <li key={`li-${index}`} className="flex items-start gap-2 text-xs md:text-sm text-muted-foreground/90">
           <span className="text-primary mt-1.5 select-none text-[10px]">•</span>
@@ -224,7 +234,7 @@ function parseDescription(description: string): React.ReactNode {
         flushList(index)
         elements.push(
           <p key={index} className="text-xs md:text-sm text-muted-foreground/90 leading-relaxed mb-1.5">
-            {renderInline(line)}
+            {renderInline(trimmed)}
           </p>
         )
       }
