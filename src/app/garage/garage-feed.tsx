@@ -321,6 +321,8 @@ function VehicleCard({ vehicle, isFeature, isHighlighted, onSelect }: VehicleCar
       transition={{ duration: 0.4 }}
       onClick={onSelect}
       className={`group relative overflow-hidden rounded-xl md:rounded-2xl border bg-card/60 backdrop-blur-sm transition-all duration-500 flex flex-col justify-between cursor-pointer ${
+        isShareOpen ? "z-30" : ""
+      } ${
         isHighlighted
           ? "ring-2 ring-amber-500 shadow-[0_0_30px_rgba(245,158,11,0.5)] border-amber-500/80 scale-[1.01]"
           : isFeature 
@@ -510,6 +512,7 @@ interface VehicleDetailDrawerProps {
 
 function VehicleDetailDrawer({ vehicle, onClose }: VehicleDetailDrawerProps) {
   const [currentImgIndex, setCurrentImgIndex] = useState(0)
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false)
 
   const handleNextImage = (e: React.MouseEvent) => {
     e.preventDefault()
@@ -570,9 +573,11 @@ function VehicleDetailDrawer({ vehicle, onClose }: VehicleDetailDrawerProps) {
         {/* Carousel / Image Viewer */}
         <div className="relative overflow-hidden aspect-[4/3] rounded-2xl bg-zinc-900 border border-zinc-800 flex-shrink-0 mt-2">
           <div
-            className="w-full h-full bg-contain bg-no-repeat bg-center"
+            onClick={() => setIsLightboxOpen(true)}
+            className="w-full h-full bg-cover cursor-zoom-in"
             style={{ 
-              backgroundImage: `url(${vehicle.images[currentImgIndex]})`
+              backgroundImage: `url(${vehicle.images[currentImgIndex]})`,
+              backgroundPosition: vehicle.imagePosition || 'center'
             }}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent pointer-events-none" />
@@ -685,9 +690,11 @@ function VehicleDetailDrawer({ vehicle, onClose }: VehicleDetailDrawerProps) {
         {/* Carousel / Image Viewer */}
         <div className="relative overflow-hidden aspect-video rounded-2xl bg-zinc-900 border border-zinc-800 flex-shrink-0">
           <div
-            className="w-full h-full bg-contain bg-no-repeat bg-center"
+            onClick={() => setIsLightboxOpen(true)}
+            className="w-full h-full bg-cover cursor-zoom-in"
             style={{ 
-              backgroundImage: `url(${vehicle.images[currentImgIndex]})`
+              backgroundImage: `url(${vehicle.images[currentImgIndex]})`,
+              backgroundPosition: vehicle.imagePosition || 'center'
             }}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent pointer-events-none" />
@@ -778,6 +785,81 @@ function VehicleDetailDrawer({ vehicle, onClose }: VehicleDetailDrawerProps) {
           <span className="text-primary">Unknown Club</span>
         </div>
       </motion.div>
+
+      {/* Lightbox / Full Screen Image Visor */}
+      <AnimatePresence>
+        {isLightboxOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setIsLightboxOpen(false)}
+            className="fixed inset-0 z-[60] flex flex-col items-center justify-center bg-black/95 p-4"
+          >
+            {/* Close button */}
+            <button
+              onClick={() => setIsLightboxOpen(false)}
+              className="absolute top-6 right-6 p-3 rounded-full bg-zinc-900/80 border border-zinc-800 text-zinc-400 hover:text-white hover:bg-zinc-800/80 transition-colors z-20 backdrop-blur"
+              aria-label="Cerrar visor"
+            >
+              <X className="w-6 h-6" />
+            </button>
+
+            {/* Main Image container */}
+            <div 
+              className="relative w-full max-w-5xl h-[80vh] flex items-center justify-center select-none"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <img
+                src={vehicle.images[currentImgIndex]}
+                alt={`${vehicle.brand} ${vehicle.model} - Imagen ampliada`}
+                className="max-w-full max-h-full object-contain rounded-lg animate-fade-in shadow-2xl"
+              />
+
+              {/* Navigation arrows */}
+              {vehicle.images.length > 1 && (
+                <>
+                  <button
+                    onClick={handlePrevImage}
+                    className="absolute left-2 md:left-6 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-black/60 border border-white/10 text-white flex items-center justify-center hover:bg-black/80 transition-colors shadow-lg"
+                  >
+                    <ChevronLeft className="w-7 h-7" />
+                  </button>
+                  <button
+                    onClick={handleNextImage}
+                    className="absolute right-2 md:right-6 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-black/60 border border-white/10 text-white flex items-center justify-center hover:bg-black/80 transition-colors shadow-lg"
+                  >
+                    <ChevronRight className="w-7 h-7" />
+                  </button>
+                </>
+              )}
+            </div>
+
+            {/* Bottom info & thumbnail dots */}
+            <div className="mt-4 flex flex-col items-center gap-3 text-center" onClick={(e) => e.stopPropagation()}>
+              <p className="text-sm font-bold text-zinc-300">
+                {vehicle.brand} {vehicle.model} ({currentImgIndex + 1} de {vehicle.images.length})
+              </p>
+              
+              {vehicle.images.length > 1 && (
+                <div className="flex gap-2">
+                  {vehicle.images.map((img, idx) => (
+                    <button
+                      key={idx}
+                      onClick={(e) => handleDotClick(e, idx)}
+                      className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${
+                        idx === currentImgIndex
+                          ? "bg-white scale-125 w-5"
+                          : "bg-white/30 hover:bg-white/60"
+                      }`}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
