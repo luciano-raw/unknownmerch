@@ -24,6 +24,9 @@ export async function Header() {
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
         <div className="flex items-center gap-6 md:gap-8">
           <Link href="/" className="flex items-center space-x-2">
+            <span className="text-lg font-black tracking-tighter text-primary uppercase italic md:hidden">
+              Unknown
+            </span>
             <span className="text-xl font-bold tracking-tight text-primary uppercase italic hidden md:inline">
               Unknown Club
             </span>
