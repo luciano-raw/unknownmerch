@@ -570,10 +570,9 @@ function VehicleDetailDrawer({ vehicle, onClose }: VehicleDetailDrawerProps) {
         {/* Carousel / Image Viewer */}
         <div className="relative overflow-hidden aspect-[4/3] rounded-2xl bg-zinc-900 border border-zinc-800 flex-shrink-0 mt-2">
           <div
-            className="w-full h-full bg-cover"
+            className="w-full h-full bg-contain bg-no-repeat bg-center"
             style={{ 
-              backgroundImage: `url(${vehicle.images[currentImgIndex]})`,
-              backgroundPosition: vehicle.imagePosition || 'center'
+              backgroundImage: `url(${vehicle.images[currentImgIndex]})`
             }}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent pointer-events-none" />
@@ -686,10 +685,9 @@ function VehicleDetailDrawer({ vehicle, onClose }: VehicleDetailDrawerProps) {
         {/* Carousel / Image Viewer */}
         <div className="relative overflow-hidden aspect-video rounded-2xl bg-zinc-900 border border-zinc-800 flex-shrink-0">
           <div
-            className="w-full h-full bg-cover"
+            className="w-full h-full bg-contain bg-no-repeat bg-center"
             style={{ 
-              backgroundImage: `url(${vehicle.images[currentImgIndex]})`,
-              backgroundPosition: vehicle.imagePosition || 'center'
+              backgroundImage: `url(${vehicle.images[currentImgIndex]})`
             }}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent pointer-events-none" />
