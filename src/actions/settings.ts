@@ -27,6 +27,7 @@ export async function updateStoreSettings(formData: FormData) {
     const whatsappNumber = formData.get("whatsappNumber") as string
     const bannerFile = formData.get("heroBannerImage") as File | null
     const removeBanner = formData.get("removeBanner") === "true"
+    const mapAreaColor = (formData.get("mapAreaColor") as string)?.trim() || "#f59e0b"
 
     let heroBannerUrl = formData.get("currentBannerUrl") as string | null
 
@@ -63,13 +64,14 @@ export async function updateStoreSettings(formData: FormData) {
         heroBannerUrl,
         bannerIsActive,
         storeNotice: storeNotice?.trim() === "" ? null : storeNotice,
-        whatsappNumber: whatsappNumber?.trim() || "56930531304"
+        whatsappNumber: whatsappNumber?.trim() || "56930531304",
+        mapAreaColor: mapAreaColor
       }
     })
 
     await createAuditLog(
       "UPDATE_SETTINGS",
-      `Actualizada la configuración global (Aviso: ${storeNotice ? `'${storeNotice}'` : 'desactivado'}, Banner Activo: ${bannerIsActive}, WhatsApp: ${whatsappNumber})`
+      `Actualizada la configuración global (Aviso: ${storeNotice ? `'${storeNotice}'` : 'desactivado'}, Banner Activo: ${bannerIsActive}, WhatsApp: ${whatsappNumber}, Color Mapa: ${mapAreaColor})`
     )
 
     revalidatePath("/")

@@ -61,6 +61,7 @@ model StoreSettings {
   bannerIsActive     Boolean  @default(false)
   storeNotice        String?  
   whatsappNumber     String   @default("56930531304")
+  mapAreaColor       String   @default("#f59e0b")
   updatedAt          DateTime @updatedAt
 }
 
@@ -77,6 +78,7 @@ model Vehicle {
   status        String   @default("Community") // "Community" or "Club Member"
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+  mapProfiles   MapProfile[]
 }
 
 model AnalyticsEvent {
@@ -98,5 +100,16 @@ model AuditLog {
   action      String   // e.g., "CREATE_PRODUCT", "UPDATE_SETTINGS", "DELETE_VEHICLE", "VIP_DISCOUNT_UPDATE", "STOCK_UPDATE"
   description String   // Detailed message e.g., "Creado producto 'Polera Unknown' con precio $15000"
   createdAt   DateTime @default(now())
+}
+
+model MapProfile {
+  id        String   @id @default(cuid())
+  vehicleId String
+  vehicle   Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  latitude  Float
+  longitude Float
+  radius    Float    @default(4000) // Radio de circulación en metros (default 4km)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 

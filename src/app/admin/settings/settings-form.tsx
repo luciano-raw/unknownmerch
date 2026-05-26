@@ -2,7 +2,7 @@
 
 import { useState, useRef } from "react"
 import { updateStoreSettings } from "@/actions/settings"
-import { Save, Image as ImageIcon, MessageCircle, Megaphone, Trash2 } from "lucide-react"
+import { Save, Image as ImageIcon, MessageCircle, Megaphone, Trash2, MapPin } from "lucide-react"
 
 export function SettingsForm({ initialData }: { initialData: any }) {
   const [loading, setLoading] = useState(false)
@@ -152,6 +152,29 @@ export function SettingsForm({ initialData }: { initialData: any }) {
                 </div>
               </label>
             )}
+          </div>
+        </div>
+      </div>
+
+      {/* Ajustes de Mapa de Comunidad */}
+      <div className="bg-card border rounded-xl overflow-hidden shadow-sm p-5 md:p-6">
+        <div className="flex items-center gap-3 mb-4 md:mb-6 border-b pb-4">
+          <MapPin className="w-6 h-6 text-primary" />
+          <h2 className="text-lg md:text-xl font-bold">Ajustes de Mapa de Comunidad</h2>
+        </div>
+        <div className="space-y-4">
+          <div className="flex items-center gap-3">
+            <input 
+              type="color" 
+              name="mapAreaColor" 
+              id="mapAreaColor"
+              defaultValue={initialData?.mapAreaColor || "#f59e0b"}
+              className="w-12 h-12 rounded-lg border cursor-pointer bg-transparent"
+            />
+            <div>
+              <label htmlFor="mapAreaColor" className="text-sm font-bold block">Color de Área en el Mapa</label>
+              <p className="text-[11px] md:text-xs text-muted-foreground">Define el color del radio de circulación de los vehículos en el mapa interactivo.</p>
+            </div>
           </div>
         </div>
       </div>
