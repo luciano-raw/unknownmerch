@@ -72,9 +72,7 @@ export async function Header() {
               </Link>
             )}
             {!userId ? (
-              <SignInButton mode="modal">
-                <span className="text-xs font-mono hover:text-primary transition-colors cursor-pointer uppercase tracking-widest">Login</span>
-              </SignInButton>
+              <SignInButton mode="modal"><span className="text-xs font-mono hover:text-primary transition-colors cursor-pointer uppercase tracking-widest">Login</span></SignInButton>
             ) : (
               <UserButton />
             )}
@@ -112,9 +110,7 @@ export async function Header() {
               )}
               {!userId ? (
                 <div className="mt-2 flex">
-                  <SignInButton mode="modal">
-                    <span className="text-lg font-medium text-primary cursor-pointer">Iniciar Sesión o Registrarse</span>
-                  </SignInButton>
+                  <SignInButton mode="modal"><span className="text-lg font-medium text-primary cursor-pointer">Iniciar Sesión o Registrarse</span></SignInButton>
                 </div>
               ) : (
                 <div className="mt-2 flex flex-col gap-5 border-t pt-4">

@@ -74,11 +74,27 @@ export function FeaturedProducts({ products }: FeaturedProductsProps) {
         <motion.div 
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="py-16 text-center bg-secondary/10 rounded-xl"
+          className="w-full flex justify-center py-4"
         >
-          <p className="text-muted-foreground font-mono text-xs md:text-sm">
-            No hay lanzamientos recientes en esta categoría.
-          </p>
+          {activeTab === "apparel" ? (
+            <div className="text-center py-12 md:py-16 bg-card/40 border border-border/80 rounded-2xl md:rounded-3xl max-w-xl w-full px-6 shadow-sm">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-primary/20 bg-primary/5 text-primary text-[10px] font-black uppercase tracking-widest mb-4 animate-pulse">
+                Muy Pronto
+              </span>
+              <h2 className="text-xl md:text-2xl font-black uppercase italic tracking-tight mb-3">
+                Colección Apparel
+              </h2>
+              <p className="text-xs md:text-sm text-muted-foreground leading-relaxed max-w-md mx-auto font-mono lowercase">
+                streetwear exclusivo y prendas oficiales de unknown club disponibles próximamente para todo público.
+              </p>
+            </div>
+          ) : (
+            <div className="py-16 text-center bg-secondary/10 rounded-xl w-full">
+              <p className="text-muted-foreground font-mono text-xs md:text-sm">
+                No hay lanzamientos recientes en esta categoría.
+              </p>
+            </div>
+          )}
         </motion.div>
       )}
     </div>

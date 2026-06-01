@@ -1,3 +1,4 @@
+import Link from "next/link"
 import { ProductCard, ProductType } from "@/components/product-card"
 import { prisma } from "@/lib/prisma"
 
@@ -36,11 +37,36 @@ export default async function CategoryPage({
     <div className="flex flex-col min-h-screen">
       <main className="flex-1 py-12">
         <div className="container mx-auto px-4 md:px-6">
-          <div className="flex flex-col gap-2 mb-8">
+          <div className="flex flex-col gap-2 mb-6">
             <h1 className="text-3xl font-bold tracking-tight sm:text-4xl text-primary">
               {title}
             </h1>
             <p className="text-muted-foreground">{description}</p>
+          </div>
+
+          {/* Category Tabs Sub-navigation */}
+          <div className="flex flex-wrap gap-2 border-b border-border/60 pb-6 mb-8">
+            {[
+              { id: "all", label: "Todos", href: "/category/all" },
+              { id: "stickers", label: "Stickers", href: "/category/stickers" },
+              { id: "apparel", label: "Apparel", href: "/category/apparel" },
+              { id: "accessories", label: "Accesorios", href: "/category/accessories" },
+            ].map((tab) => {
+              const isActive = slug === tab.id
+              return (
+                <Link
+                  key={tab.id}
+                  href={tab.href}
+                  className={`px-4 py-2 text-[10px] md:text-xs font-mono tracking-widest uppercase border transition-all duration-200 select-none ${
+                    isActive
+                      ? "bg-primary border-primary text-primary-foreground font-bold shadow-md"
+                      : "border-border hover:border-foreground/40 text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {tab.label}
+                </Link>
+              )
+            })}
           </div>
           
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-6">
@@ -49,11 +75,23 @@ export default async function CategoryPage({
             ))}
           </div>
           
-          {products.length === 0 && (
+          {slug === "apparel" && products.length === 0 ? (
+            <div className="text-center py-16 md:py-24 bg-card/40 border border-border/80 rounded-2xl md:rounded-3xl max-w-xl mx-auto px-6 shadow-sm">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-primary/20 bg-primary/5 text-primary text-[10px] font-black uppercase tracking-widest mb-4 animate-pulse">
+                Muy Pronto
+              </span>
+              <h2 className="text-xl md:text-2xl font-black uppercase italic tracking-tight mb-3">
+                Colección Apparel
+              </h2>
+              <p className="text-xs md:text-sm text-muted-foreground leading-relaxed max-w-md mx-auto font-mono lowercase">
+                streetwear exclusivo y prendas oficiales de unknown club disponibles próximamente para todo público.
+              </p>
+            </div>
+          ) : products.length === 0 ? (
             <div className="text-center py-20 text-muted-foreground">
               No se encontraron productos en esta categoría.
             </div>
-          )}
+          ) : null}
         </div>
       </main>
     </div>
