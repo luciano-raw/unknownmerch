@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react"
 import { createVehicle, updateVehicle } from "@/actions/vehicles"
 import { useRouter } from "next/navigation"
-import { Image as ImageIcon, Star, Upload, Loader2, Sparkles, X } from "lucide-react"
+import { Image as ImageIcon, Star, Upload, Loader2, Sparkles, X, CheckCircle2 } from "lucide-react"
 
 export function VehicleForm({ initialData }: { initialData?: any }) {
   const [loading, setLoading] = useState(false)
@@ -30,6 +30,7 @@ export function VehicleForm({ initialData }: { initialData?: any }) {
   
   const [coverIndex, setCoverIndex] = useState<number>(0)
   const [imagePosition, setImagePosition] = useState<string>(initialData?.imagePosition || "center")
+  const [showSuccess, setShowSuccess] = useState(false)
   
   const router = useRouter()
   const imagesRef = useRef(images)
@@ -166,12 +167,20 @@ export function VehicleForm({ initialData }: { initialData?: any }) {
       }
       
       clearInterval(interval)
-      router.push("/admin/garage")
+      setLoading(false)
+      setShowSuccess(true)
     } catch (error: any) {
       clearInterval(interval)
       setLoading(false)
       alert("Error al guardar el vehículo: " + (error.message || "desconocido"))
     }
+  }
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    if (loading) return
+    const formData = new FormData(e.currentTarget)
+    handleAction(formData)
   }
 
   const inputClasses = "w-full rounded-lg border border-border bg-background/50 text-foreground px-4 py-2.5 outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary focus:bg-background placeholder:text-muted-foreground/60 text-sm"
@@ -195,7 +204,51 @@ export function VehicleForm({ initialData }: { initialData?: any }) {
         </div>
       )}
 
-      <form action={handleAction} className="space-y-6">
+      {/* Full-Screen Success Overlay */}
+      {showSuccess && (
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-background/95 backdrop-blur-md transition-all duration-300 animate-in fade-in">
+          <div className="relative flex flex-col items-center max-w-sm text-center px-6 scale-95 animate-in zoom-in-95 duration-300">
+            {/* Pulsing Success Ring */}
+            <div className="relative w-20 h-20 mb-6 flex items-center justify-center">
+              <div className="absolute inset-0 rounded-full border-4 border-emerald-500/20 animate-ping duration-1000" />
+              <div className="absolute inset-0 rounded-full border-4 border-emerald-500/10" />
+              <CheckCircle2 className="w-12 h-12 text-emerald-400" />
+            </div>
+            <h3 className="text-xl font-bold text-foreground mb-2">
+              {initialData ? "¡Cambios Guardados!" : "¡Vehículo Creado!"}
+            </h3>
+            <p className="text-sm text-muted-foreground mb-6">
+              {initialData 
+                ? "La ficha del vehículo ha sido actualizada exitosamente."
+                : "El vehículo se ha agregado correctamente al Garage."
+              }
+            </p>
+            <div className="flex flex-col gap-2.5 w-full">
+              <button
+                type="button"
+                onClick={() => router.push("/admin/garage")}
+                className="w-full h-10 bg-emerald-500 hover:bg-emerald-600 text-black font-bold rounded-lg transition-colors text-sm"
+              >
+                Ir al Garage
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowSuccess(false)
+                  if (!initialData) {
+                    window.location.reload()
+                  }
+                }}
+                className="w-full h-10 bg-secondary/20 hover:bg-secondary/30 text-foreground font-semibold rounded-lg transition-colors text-sm border border-border"
+              >
+                {initialData ? "Seguir Editando" : "Agregar Otro Vehículo"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit} className="space-y-6">
         <div className="grid md:grid-cols-2 gap-8">
           {/* Left Column: Form Details */}
           <div className="space-y-5">
