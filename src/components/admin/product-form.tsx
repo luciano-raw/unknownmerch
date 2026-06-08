@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { createProduct, updateProduct } from "@/actions/products"
 import { useRouter } from "next/navigation"
-import { Image as ImageIcon, Star, Upload, Loader2, Sparkles, CheckCircle2 } from "lucide-react"
+import { Image as ImageIcon, Star, Upload, Loader2, Sparkles, CheckCircle2, MousePointerClick } from "lucide-react"
 import { compressImageClientSide } from "@/lib/image"
 
 export function ProductForm({ initialData }: { initialData?: any }) {
@@ -14,8 +14,8 @@ export function ProductForm({ initialData }: { initialData?: any }) {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
   const [previewUrls, setPreviewUrls] = useState<string[]>([])
   const [coverIndex, setCoverIndex] = useState<number>(0)
+  const [hoverIndex, setHoverIndex] = useState<number>(1)
   const [existingImages, setExistingImages] = useState<string[]>(initialData?.images || [])
-  const [existingCoverIndex, setExistingCoverIndex] = useState<number>(0)
   
   const [shippingType, setShippingType] = useState<string>("envio_y_retiro")
   const [shippingLocations, setShippingLocations] = useState<string[]>([])
@@ -135,13 +135,19 @@ export function ProductForm({ initialData }: { initialData?: any }) {
 
       if (selectedFiles.length > 0) {
         setLoadingMessage("Comprimiendo imágenes en el navegador...")
-        const rearrangedFiles = [
-          selectedFiles[coverIndex],
-          ...selectedFiles.filter((_, index) => index !== coverIndex)
-        ].filter(Boolean)
+        const rearrangedFiles = []
+        rearrangedFiles[0] = selectedFiles[coverIndex]
+        if (selectedFiles.length > 1) {
+          rearrangedFiles[1] = selectedFiles[hoverIndex]
+        }
+        const remaining = selectedFiles.filter((_, idx) => idx !== coverIndex && idx !== hoverIndex)[0]
+        if (remaining) {
+          rearrangedFiles[2] = remaining
+        }
+        const finalFiles = rearrangedFiles.filter(Boolean)
 
-        for (let i = 0; i < rearrangedFiles.length; i++) {
-          const file = rearrangedFiles[i]
+        for (let i = 0; i < finalFiles.length; i++) {
+          const file = finalFiles[i]
           try {
             const compressedBlob = await compressImageClientSide(file)
             finalFormData.append("images", compressedBlob, `image-${i}.webp`)
@@ -151,9 +157,16 @@ export function ProductForm({ initialData }: { initialData?: any }) {
           }
         }
       } else if (initialData?.id && existingImages.length > 0) {
-        // If editing but no NEW images, send the rearranged old images
-        const rearrangedOld = [existingImages[existingCoverIndex], ...existingImages.filter((_, i) => i !== existingCoverIndex)]
-        finalFormData.append("existingImagesOrder", JSON.stringify(rearrangedOld))
+        const rearrangedOld = []
+        rearrangedOld[0] = existingImages[coverIndex]
+        if (existingImages.length > 1) {
+          rearrangedOld[1] = existingImages[hoverIndex]
+        }
+        const remaining = existingImages.filter((_, idx) => idx !== coverIndex && idx !== hoverIndex)[0]
+        if (remaining) {
+          rearrangedOld[2] = remaining
+        }
+        finalFormData.append("existingImagesOrder", JSON.stringify(rearrangedOld.filter(Boolean)))
       }
 
       let result
@@ -417,55 +430,131 @@ export function ProductForm({ initialData }: { initialData?: any }) {
               {/* Styled Previews Grid */}
               {(previewUrls.length > 0 || existingImages.length > 0) && (
                 <div className="space-y-2">
-                  <span className={labelClasses}>Distribución y Portada</span>
+                  <span className={labelClasses}>Distribución y Portada (Estrella = Portada | Puntero = Hover)</span>
                   <div className="grid grid-cols-3 gap-3">
                     {previewUrls.length > 0 
-                      ? previewUrls.map((url, index) => (
-                          <div 
-                            key={url} 
-                            className={`group relative aspect-square rounded-xl overflow-hidden border-2 transition-all duration-300 cursor-pointer ${
-                              index === coverIndex 
-                                ? "border-amber-400 ring-2 ring-amber-400/20 scale-[1.03] shadow-lg shadow-amber-400/10" 
-                                : "border-border opacity-70 hover:opacity-100"
-                            }`} 
-                            onClick={() => !loading && setCoverIndex(index)}
-                          >
-                            <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${url})` }} />
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60 group-hover:opacity-30 transition-opacity" />
-                            
-                            <div className="absolute top-1.5 right-1.5">
-                              <div className={`p-1 rounded-full ${index === coverIndex ? "bg-amber-400 text-amber-950" : "bg-black/50 text-white hover:bg-black/70"} transition-colors shadow-sm`}>
-                                <Star className={`w-3.5 h-3.5 ${index === coverIndex ? "fill-amber-950" : ""}`} />
+                      ? previewUrls.map((url, index) => {
+                          const isCover = index === coverIndex
+                          const isHover = index === hoverIndex && previewUrls.length > 1
+                          return (
+                            <div 
+                              key={url} 
+                              className={`group relative aspect-square rounded-xl overflow-hidden border-2 transition-all duration-300 ${
+                                isCover 
+                                  ? "border-amber-400 ring-2 ring-amber-400/20 scale-[1.03] shadow-lg shadow-amber-400/10" 
+                                  : isHover
+                                    ? "border-indigo-400 ring-2 ring-indigo-400/20 scale-[1.03] shadow-lg shadow-indigo-400/10"
+                                    : "border-border opacity-70 hover:opacity-100"
+                              }`}
+                            >
+                              <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${url})` }} />
+                              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60 group-hover:opacity-30 transition-opacity" />
+                              
+                              <div className="absolute top-1.5 right-1.5 flex gap-1 z-20">
+                                <button
+                                  type="button"
+                                  title="Definir como Portada"
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    if (loading) return
+                                    if (index === hoverIndex) setHoverIndex(coverIndex)
+                                    setCoverIndex(index)
+                                  }}
+                                  className={`p-1.5 rounded-full shadow-md transition-all ${
+                                    isCover 
+                                      ? "bg-amber-400 text-amber-950 hover:scale-105" 
+                                      : "bg-black/60 text-white hover:bg-black/80 hover:scale-105"
+                                  }`}
+                                >
+                                  <Star className={`w-3 h-3 ${isCover ? "fill-amber-950" : ""}`} />
+                                </button>
+                                {previewUrls.length > 1 && (
+                                  <button
+                                    type="button"
+                                    title="Definir como Imagen de Hover"
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      if (loading) return
+                                      if (index === coverIndex) setCoverIndex(hoverIndex)
+                                      setHoverIndex(index)
+                                    }}
+                                    className={`p-1.5 rounded-full shadow-md transition-all ${
+                                      isHover 
+                                        ? "bg-indigo-500 text-white hover:scale-105" 
+                                        : "bg-black/60 text-white hover:bg-black/80 hover:scale-105"
+                                    }`}
+                                  >
+                                    <MousePointerClick className="w-3 h-3" />
+                                  </button>
+                                )}
+                              </div>
+                              <div className="absolute bottom-1.5 left-2 text-[9px] font-bold text-white tracking-wider uppercase bg-black/40 px-1.5 py-0.5 rounded backdrop-blur-[2px]">
+                                {isCover ? "Portada" : isHover ? "Hover" : `Foto ${index + 1}`}
                               </div>
                             </div>
-                            <div className="absolute bottom-1.5 left-2 text-[9px] font-bold text-white tracking-wider uppercase">
-                              {index === coverIndex ? "Portada" : `Foto ${index + 1}`}
-                            </div>
-                          </div>
-                        ))
-                      : existingImages.map((url, index) => (
-                          <div 
-                            key={url} 
-                            className={`group relative aspect-square rounded-xl overflow-hidden border-2 transition-all duration-300 cursor-pointer ${
-                              index === existingCoverIndex 
-                                ? "border-amber-400 ring-2 ring-amber-400/20 scale-[1.03] shadow-lg shadow-amber-400/10" 
-                                : "border-border opacity-70 hover:opacity-100"
-                            }`} 
-                            onClick={() => !loading && setExistingCoverIndex(index)}
-                          >
-                            <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${url})` }} />
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60 group-hover:opacity-30 transition-opacity" />
-                            
-                            <div className="absolute top-1.5 right-1.5">
-                              <div className={`p-1 rounded-full ${index === existingCoverIndex ? "bg-amber-400 text-amber-950" : "bg-black/50 text-white hover:bg-black/70"} transition-colors shadow-sm`}>
-                                <Star className={`w-3.5 h-3.5 ${index === existingCoverIndex ? "fill-amber-950" : ""}`} />
+                          )
+                        })
+                      : existingImages.map((url, index) => {
+                          const isCover = index === coverIndex
+                          const isHover = index === hoverIndex && existingImages.length > 1
+                          return (
+                            <div 
+                              key={url} 
+                              className={`group relative aspect-square rounded-xl overflow-hidden border-2 transition-all duration-300 ${
+                                isCover 
+                                  ? "border-amber-400 ring-2 ring-amber-400/20 scale-[1.03] shadow-lg shadow-amber-400/10" 
+                                  : isHover
+                                    ? "border-indigo-400 ring-2 ring-indigo-400/20 scale-[1.03] shadow-lg shadow-indigo-400/10"
+                                    : "border-border opacity-70 hover:opacity-100"
+                              }`}
+                            >
+                              <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${url})` }} />
+                              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60 group-hover:opacity-30 transition-opacity" />
+                              
+                              <div className="absolute top-1.5 right-1.5 flex gap-1 z-20">
+                                <button
+                                  type="button"
+                                  title="Definir como Portada"
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    if (loading) return
+                                    if (index === hoverIndex) setHoverIndex(coverIndex)
+                                    setCoverIndex(index)
+                                  }}
+                                  className={`p-1.5 rounded-full shadow-md transition-all ${
+                                    isCover 
+                                      ? "bg-amber-400 text-amber-950 hover:scale-105" 
+                                      : "bg-black/60 text-white hover:bg-black/80 hover:scale-105"
+                                  }`}
+                                >
+                                  <Star className={`w-3 h-3 ${isCover ? "fill-amber-950" : ""}`} />
+                                </button>
+                                {existingImages.length > 1 && (
+                                  <button
+                                    type="button"
+                                    title="Definir como Imagen de Hover"
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      if (loading) return
+                                      if (index === coverIndex) setCoverIndex(hoverIndex)
+                                      setHoverIndex(index)
+                                    }}
+                                    className={`p-1.5 rounded-full shadow-md transition-all ${
+                                      isHover 
+                                        ? "bg-indigo-500 text-white hover:scale-105" 
+                                        : "bg-black/60 text-white hover:bg-black/80 hover:scale-105"
+                                    }`}
+                                  >
+                                    <MousePointerClick className="w-3 h-3" />
+                                  </button>
+                                )}
+                              </div>
+                              <div className="absolute bottom-1.5 left-2 text-[9px] font-bold text-white tracking-wider uppercase bg-black/40 px-1.5 py-0.5 rounded backdrop-blur-[2px]">
+                                {isCover ? "Portada" : isHover ? "Hover" : `Foto ${index + 1}`}
                               </div>
                             </div>
-                            <div className="absolute bottom-1.5 left-2 text-[9px] font-bold text-white tracking-wider uppercase">
-                              {index === existingCoverIndex ? "Portada" : `Foto ${index + 1}`}
-                            </div>
-                          </div>
-                        ))
+                          )
+                        })
                     }
                   </div>
                 </div>
