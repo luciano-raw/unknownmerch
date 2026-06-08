@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { createProduct, updateProduct } from "@/actions/products"
 import { useRouter } from "next/navigation"
 import { Image as ImageIcon, Star, Upload, Loader2, Sparkles, CheckCircle2 } from "lucide-react"
+import { compressImageClientSide } from "@/lib/image"
 
 export function ProductForm({ initialData }: { initialData?: any }) {
   const [loading, setLoading] = useState(false)
@@ -133,11 +134,22 @@ export function ProductForm({ initialData }: { initialData?: any }) {
       finalFormData.append("specifications", JSON.stringify(specsObj))
 
       if (selectedFiles.length > 0) {
-        // Enforce the cover image is at index 0
-        finalFormData.append("images", selectedFiles[coverIndex])
-        selectedFiles.forEach((file, index) => {
-          if (index !== coverIndex) finalFormData.append("images", file)
-        })
+        setLoadingMessage("Comprimiendo imágenes en el navegador...")
+        const rearrangedFiles = [
+          selectedFiles[coverIndex],
+          ...selectedFiles.filter((_, index) => index !== coverIndex)
+        ].filter(Boolean)
+
+        for (let i = 0; i < rearrangedFiles.length; i++) {
+          const file = rearrangedFiles[i]
+          try {
+            const compressedBlob = await compressImageClientSide(file)
+            finalFormData.append("images", compressedBlob, `image-${i}.webp`)
+          } catch (e) {
+            console.error("Client-side image compression failed:", e)
+            finalFormData.append("images", file)
+          }
+        }
       } else if (initialData?.id && existingImages.length > 0) {
         // If editing but no NEW images, send the rearranged old images
         const rearrangedOld = [existingImages[existingCoverIndex], ...existingImages.filter((_, i) => i !== existingCoverIndex)]
@@ -387,7 +399,7 @@ export function ProductForm({ initialData }: { initialData?: any }) {
                     <p className="text-sm font-semibold text-foreground">
                       {isDragging ? "¡Suelta las fotos aquí!" : "Sube o arrastra imágenes"}
                     </p>
-                    <p className="text-xs text-muted-foreground mt-1">Soporta PNG, JPG o WEBP (Máx. 10MB)</p>
+                    <p className="text-xs text-muted-foreground mt-1">Soporta PNG, JPG o WEBP (Se optimizan automáticamente)</p>
                   </div>
                   <input 
                     id="file-upload-input"

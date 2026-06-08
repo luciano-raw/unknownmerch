@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react"
 import { createVehicle, updateVehicle } from "@/actions/vehicles"
 import { useRouter } from "next/navigation"
 import { Image as ImageIcon, Star, Upload, Loader2, Sparkles, X, CheckCircle2 } from "lucide-react"
+import { compressImageClientSide } from "@/lib/image"
 
 export function VehicleForm({ initialData }: { initialData?: any }) {
   const [loading, setLoading] = useState(false)
@@ -143,15 +144,23 @@ export function VehicleForm({ initialData }: { initialData?: any }) {
       const imageLayout: string[] = []
       let newImageCount = 0
 
-      rearranged.forEach((img) => {
+      setLoadingMessage("Comprimiendo imágenes en el navegador...")
+
+      for (const img of rearranged) {
         if (img.isExisting) {
           imageLayout.push(img.url)
         } else if (img.file) {
           imageLayout.push(`NEW_${newImageCount}`)
-          finalFormData.append("newImages", img.file)
+          try {
+            const compressedBlob = await compressImageClientSide(img.file)
+            finalFormData.append("newImages", compressedBlob, `vehicle-${newImageCount}.webp`)
+          } catch (e) {
+            console.error("Client-side image compression failed:", e)
+            finalFormData.append("newImages", img.file)
+          }
           newImageCount++
         }
-      })
+      }
 
       finalFormData.append("imageLayout", JSON.stringify(imageLayout))
 
@@ -397,7 +406,7 @@ export function VehicleForm({ initialData }: { initialData?: any }) {
                     <p className="text-sm font-semibold text-foreground">
                       {isDragging ? "¡Suelta las fotos aquí!" : "Sube o arrastra imágenes"}
                     </p>
-                    <p className="text-xs text-muted-foreground mt-1">Soporta PNG, JPG o WEBP (Máx. 4 imágenes, 10MB c/u)</p>
+                    <p className="text-xs text-muted-foreground mt-1">Soporta PNG, JPG o WEBP (Máx. 4 imágenes, se optimizan automáticamente)</p>
                   </div>
                   <input 
                     id="vehicle-upload-input"
