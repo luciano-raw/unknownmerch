@@ -99,8 +99,8 @@ export async function createProduct(formData: FormData) {
     revalidatePath("/")
     return product
   } catch (err: any) {
-    console.error(err)
-    throw new Error(err.message || "Error al crear el producto")
+    console.error("Error in createProduct server action:", err)
+    return { error: err.message || "Error al crear el producto" }
   }
 }
 
@@ -194,8 +194,8 @@ export async function updateProduct(id: string, formData: FormData) {
     revalidatePath(`/product/${id}`)
     return product
   } catch (err: any) {
-    console.error(err)
-    throw new Error(err.message || "Error al actualizar el producto")
+    console.error("Error in updateProduct server action:", err)
+    return { error: err.message || "Error al actualizar el producto" }
   }
 }
 

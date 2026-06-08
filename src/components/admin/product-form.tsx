@@ -143,10 +143,15 @@ export function ProductForm({ initialData }: { initialData?: any }) {
         finalFormData.append("existingImagesOrder", JSON.stringify(rearrangedOld))
       }
 
+      let result
       if (initialData?.id) {
-        await updateProduct(initialData.id, finalFormData)
+        result = await updateProduct(initialData.id, finalFormData)
       } else {
-        await createProduct(finalFormData)
+        result = await createProduct(finalFormData)
+      }
+
+      if (result && typeof result === "object" && "error" in result) {
+        throw new Error(result.error as string)
       }
       
       clearInterval(interval)

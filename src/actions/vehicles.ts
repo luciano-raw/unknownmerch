@@ -142,8 +142,8 @@ export async function createVehicle(formData: FormData) {
     revalidatePath("/admin/garage")
     return vehicle
   } catch (err: any) {
-    console.error(err)
-    throw new Error(err.message || "Error al crear el vehículo")
+    console.error("Error in createVehicle server action:", err)
+    return { error: err.message || "Error al crear el vehículo" }
   }
 }
 
@@ -275,8 +275,8 @@ export async function updateVehicle(id: string, formData: FormData) {
     revalidatePath("/admin/garage")
     return vehicle
   } catch (err: any) {
-    console.error(err)
-    throw new Error(err.message || "Error al actualizar el vehículo")
+    console.error("Error in updateVehicle server action:", err)
+    return { error: err.message || "Error al actualizar el vehículo" }
   }
 }
 

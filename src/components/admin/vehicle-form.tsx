@@ -154,10 +154,15 @@ export function VehicleForm({ initialData }: { initialData?: any }) {
 
       finalFormData.append("imageLayout", JSON.stringify(imageLayout))
 
+      let result
       if (initialData?.id) {
-        await updateVehicle(initialData.id, finalFormData)
+        result = await updateVehicle(initialData.id, finalFormData)
       } else {
-        await createVehicle(finalFormData)
+        result = await createVehicle(finalFormData)
+      }
+
+      if (result && typeof result === "object" && "error" in result) {
+        throw new Error(result.error as string)
       }
       
       clearInterval(interval)
