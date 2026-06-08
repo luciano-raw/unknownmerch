@@ -28,10 +28,32 @@ export default function CartPage() {
     setIsProcessing(true)
     try {
       // Dynamic fetch of store settings
-      const req = await fetch('/api/settings') // We need an API route, wait. No, cart is client side!
-      // Actually we have a Server Action getStoreSettings! Yes!
       const { getStoreSettings } = await import("@/actions/settings")
       const settings = await getStoreSettings()
+      
+      // Calculate final prices and format items for the order
+      const orderItems = items.map((item) => {
+        const finalPrice = vipDiscount > 0 ? item.price * (1 - vipDiscount / 100) : item.price
+        return {
+          productId: item.id,
+          quantity: item.quantity,
+          price: finalPrice,
+          selectedVariant: item.selectedVariant,
+        }
+      })
+
+      // Create the pending order ticket in the database
+      const { createOrder } = await import("@/actions/orders")
+      const orderRes = await createOrder({
+        customerName: name.trim(),
+        total: total,
+        items: orderItems,
+      })
+
+      if (!orderRes.success) {
+        alert(`Error al registrar el pedido: ${orderRes.error}`)
+        return
+      }
       
       const whatsappUrl = generateWhatsAppLink(items, name, vipDiscount, settings.whatsappNumber)
       window.open(whatsappUrl, "_blank")
@@ -146,9 +168,10 @@ export default function CartPage() {
                 
                 <button 
                   onClick={handleCheckout}
-                  className="w-full h-12 bg-[#25D366] hover:bg-[#1da851] text-white font-bold rounded-md transition-colors flex items-center justify-center gap-2"
+                  disabled={isProcessing}
+                  className="w-full h-12 bg-[#25D366] hover:bg-[#1da851] text-white font-bold rounded-md transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Continuar por WhatsApp
+                  {isProcessing ? "Procesando..." : "Continuar por WhatsApp"}
                 </button>
                 <p className="text-xs text-center text-muted-foreground mt-2">
                   Serás redirigido/a a WhatsApp para coordinar el pago y envío.

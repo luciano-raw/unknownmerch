@@ -1,4 +1,4 @@
-import { Package, Users, Settings, ClipboardList, Car, BarChart3, MapPin } from "lucide-react"
+import { Package, Users, Settings, ClipboardList, Car, BarChart3, MapPin, ShoppingBag } from "lucide-react"
 import Link from "next/link"
 
 export default function AdminDashboardPage() {
@@ -20,7 +20,20 @@ export default function AdminDashboardPage() {
               Gestionar
             </Link>
           </div>
-          
+
+          <div className="p-6 border rounded-xl bg-card shadow-sm hover:shadow-md transition-shadow">
+            <div className="w-12 h-12 rounded-full bg-primary/10 text-primary flex items-center justify-center mb-4">
+              <ShoppingBag className="w-6 h-6" />
+            </div>
+            <h2 className="text-xl font-bold mb-2">Pedidos (Tickets)</h2>
+            <p className="text-muted-foreground mb-4">
+              Revisa, aprueba o rechaza los pedidos enviados por WhatsApp y gestiona el stock de inventario.
+            </p>
+            <Link href="/admin/orders" className="block text-center w-full py-2 bg-secondary text-secondary-foreground font-medium rounded-md hover:bg-secondary/80 transition-colors">
+              Gestionar Pedidos
+            </Link>
+          </div>
+
           <div className="p-6 border rounded-xl bg-card shadow-sm hover:shadow-md transition-shadow">
             <div className="w-12 h-12 rounded-full bg-primary/10 text-primary flex items-center justify-center mb-4">
               <Users className="w-6 h-6" />
@@ -94,7 +107,7 @@ export default function AdminDashboardPage() {
             <p className="text-muted-foreground mb-4">
               Configura las áreas de circulación de los miembros de la comunidad en el mapa interactivo.
             </p>
-            <Link href="/admin/map" className="block text-center w-full py-2 bg-primary text-primary-foreground font-medium rounded-md hover:bg-primary/95 transition-colors shadow-sm">
+            <Link href="/admin/map" className="block text-center w-full py-2 bg-secondary text-secondary-foreground font-medium rounded-md hover:bg-secondary/80 transition-colors">
               Gestionar Mapa
             </Link>
           </div>

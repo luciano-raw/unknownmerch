@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { Menu, Car } from "lucide-react"
+import { Menu, Car, Gauge, Package, Users, MapPin } from "lucide-react"
 import { ThemeToggle } from "./theme-toggle"
 import { CartIcon } from "./cart-icon"
 import { MobileMenu } from "./mobile-menu"
@@ -31,36 +31,36 @@ export async function Header() {
               Unknown Club
             </span>
           </Link>
-          <nav className="hidden md:flex gap-6 font-mono text-xs uppercase tracking-widest">
+          <nav className="hidden md:flex items-center gap-4 font-mono text-xs uppercase tracking-widest">
             <Link
               href="/category/all"
-              className="transition-colors hover:text-primary"
+              className="transition-all hover:text-primary flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-transparent hover:border-border hover:bg-secondary/35"
             >
-              Colección
+              <Package className="w-3.5 h-3.5 text-muted-foreground hover:text-primary" /> Colección
             </Link>
             <Link
               href="/nosotros"
-              className="transition-colors hover:text-primary"
+              className="transition-all hover:text-primary flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-transparent hover:border-border hover:bg-secondary/35"
             >
-              Club
+              <Users className="w-3.5 h-3.5 text-muted-foreground hover:text-primary" /> Club
             </Link>
             <Link
               href="/garage"
-              className="transition-colors hover:text-primary"
+              className="transition-all hover:text-primary flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-transparent hover:border-border hover:bg-secondary/35"
             >
-              Garage
+              <Car className="w-3.5 h-3.5 text-muted-foreground hover:text-primary" /> Garage
             </Link>
             <Link
               href="/simulador"
-              className="transition-colors hover:text-primary"
+              className="transition-all hover:text-primary flex items-center gap-1.5 bg-primary/10 border border-primary/20 px-3 py-1.5 rounded-lg text-primary hover:bg-primary/20 font-bold"
             >
-              Simulador
+              <Gauge className="w-3.5 h-3.5" /> Comparador
             </Link>
             <Link
               href="/mapa"
-              className="transition-colors hover:text-primary"
+              className="transition-all hover:text-primary flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-transparent hover:border-border hover:bg-secondary/35"
             >
-              Mapa
+              <MapPin className="w-3.5 h-3.5 text-muted-foreground hover:text-primary" /> Mapa
             </Link>
           </nav>
         </div>
@@ -88,20 +88,20 @@ export async function Header() {
  
           <MobileMenu>
             <nav className="flex flex-col gap-6 p-4">
-              <Link href="/category/all" className="text-xl font-black uppercase italic hover:text-primary transition-colors">
-                Colección
+              <Link href="/category/all" className="text-xl font-black uppercase italic hover:text-primary transition-colors flex items-center gap-2">
+                <Package className="w-5 h-5 text-primary" /> Colección
               </Link>
-              <Link href="/nosotros" className="text-xl font-black uppercase italic hover:text-primary transition-colors">
-                Club
+              <Link href="/nosotros" className="text-xl font-black uppercase italic hover:text-primary transition-colors flex items-center gap-2">
+                <Users className="w-5 h-5 text-primary" /> Club
               </Link>
-              <Link href="/garage" className="text-xl font-black uppercase italic hover:text-primary transition-colors">
-                Garage
+              <Link href="/garage" className="text-xl font-black uppercase italic hover:text-primary transition-colors flex items-center gap-2">
+                <Car className="w-5 h-5 text-primary" /> Garage
               </Link>
-              <Link href="/simulador" className="text-xl font-black uppercase italic hover:text-primary transition-colors">
-                Simulador
+              <Link href="/simulador" className="text-xl font-black uppercase italic hover:text-primary transition-colors flex items-center gap-2">
+                <Gauge className="w-5 h-5 text-primary" /> Comparador Neumáticos
               </Link>
-              <Link href="/mapa" className="text-xl font-black uppercase italic hover:text-primary transition-colors">
-                Mapa
+              <Link href="/mapa" className="text-xl font-black uppercase italic hover:text-primary transition-colors flex items-center gap-2">
+                <MapPin className="w-5 h-5 text-primary" /> Mapa
               </Link>
               {isAdmin && (
                 <Link href="/admin" className="text-lg font-bold text-primary hover:text-primary/80 transition-colors border-b pb-2">
