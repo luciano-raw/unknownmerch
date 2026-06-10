@@ -17,14 +17,14 @@ interface TireSpec {
 
 export default function TireSimulatorPage() {
   // Active Tab state and tools definition
-  const [activeTab, setActiveTab] = useState<"tire-comparator" | "unit-converter">("tire-comparator")
+  const [activeTab, setActiveTab] = useState<"tire-comparator" | "unit-converter" | "offset" | "weight-power" | "displacement">("tire-comparator")
 
   const tabs = [
     { id: "tire-comparator", label: "Comparador Neumáticos", icon: "🛞", active: true },
     { id: "unit-converter", label: "Convertidor Mecánico", icon: "🔧", active: true },
-    { id: "offset", label: "Offset Llantas", icon: "📐", active: false },
-    { id: "weight-power", label: "Peso / Potencia", icon: "⚡", active: false },
-    { id: "displacement", label: "Cilindrada", icon: "⚙️", active: false },
+    { id: "offset", label: "Offset Llantas", icon: "📐", active: true },
+    { id: "weight-power", label: "Peso / Potencia", icon: "⚡", active: true },
+    { id: "displacement", label: "Cilindrada", icon: "⚙️", active: true },
   ]
 
   // --- Torque State ---
@@ -166,6 +166,91 @@ export default function TireSimulatorPage() {
     else if (section === "speed") setSpeed({ mph: "", kmh: "" })
     else if (section === "power") setPower({ hp: "", cv: "", kw: "" })
   }
+
+  // --- Offset Calculator State ---
+  const [offsetActualWidth, setOffsetActualWidth] = useState(7.0)
+  const [offsetActualEt, setOffsetActualEt] = useState(35)
+  const [offsetNewWidth, setOffsetNewWidth] = useState(8.0)
+  const [offsetNewEt, setOffsetNewEt] = useState(25)
+
+  const offsetMetrics = useMemo(() => {
+    const actOuter = (offsetActualWidth / 2 * 25.4) - offsetActualEt
+    const actInner = (offsetActualWidth / 2 * 25.4) + offsetActualEt
+    const newOuter = (offsetNewWidth / 2 * 25.4) - offsetNewEt
+    const newInner = (offsetNewWidth / 2 * 25.4) + offsetNewEt
+
+    const outerChange = newOuter - actOuter
+    const innerChange = newInner - actInner
+
+    return {
+      actual: { outer: actOuter, inner: actInner, total: offsetActualWidth * 25.4 },
+      new: { outer: newOuter, inner: newInner, total: offsetNewWidth * 25.4 },
+      outerChange,
+      innerChange,
+    }
+  }, [offsetActualWidth, offsetActualEt, offsetNewWidth, offsetNewEt])
+
+  // --- Weight/Power State ---
+  const [weight, setWeight] = useState(1100)
+  const [powerHp, setPowerHp] = useState(130)
+  const [traction, setTraction] = useState<"fwd" | "rwd" | "awd">("fwd")
+
+  const performanceMetrics = useMemo(() => {
+    const ratioWeightPower = powerHp > 0 ? weight / powerHp : 0
+    const ratioPowerWeight = weight > 0 ? (powerHp / weight) * 1000 : 0
+
+    let zeroTo100 = 0
+    if (ratioWeightPower > 0) {
+      if (traction === "fwd") {
+        zeroTo100 = 0.9 * ratioWeightPower + 1.5
+      } else if (traction === "rwd") {
+        zeroTo100 = 0.85 * ratioWeightPower + 1.2
+      } else {
+        zeroTo100 = 0.75 * ratioWeightPower + 0.8
+      }
+    }
+    zeroTo100 = Math.max(2.2, zeroTo100) // minimum logical physics limit
+
+    const quarterMileTime = ratioWeightPower > 0 ? 6.2 * Math.pow(ratioWeightPower, 0.33) : 0
+    const quarterMileSpeed = ratioWeightPower > 0 ? 365 * Math.pow(powerHp / weight, 0.33) : 0
+
+    return {
+      ratioWeightPower,
+      ratioPowerWeight,
+      zeroTo100,
+      quarterMileTime,
+      quarterMileSpeed,
+    }
+  }, [weight, powerHp, traction])
+
+  // --- Displacement / Engine State ---
+  const [bore, setBore] = useState(75.0)
+  const [stroke, setStroke] = useState(84.7)
+  const [cylinders, setCylinders] = useState(4)
+  const [chamberVolume, setChamberVolume] = useState("")
+  const [gasketThickness, setGasketThickness] = useState("")
+  const [gasketBore, setGasketBore] = useState("")
+
+  const engineMetrics = useMemo(() => {
+    const unitCc = Math.PI * Math.pow(bore / 20, 2) * (stroke / 10)
+    const totalCc = unitCc * cylinders
+    
+    let compressionRatio: number | null = null
+    const gThickness = parseFloat(gasketThickness) || 0
+    const gBore = parseFloat(gasketBore) || bore
+    const Vg = Math.PI * Math.pow(gBore / 20, 2) * (gThickness / 10)
+    const Vc = parseFloat(chamberVolume) || 0
+
+    if (Vc > 0) {
+      compressionRatio = (unitCc + Vg + Vc) / (Vc + Vg)
+    }
+
+    return {
+      unitCc,
+      totalCc,
+      compressionRatio,
+    }
+  }, [bore, stroke, cylinders, chamberVolume, gasketThickness, gasketBore])
 
   // States for Tire 1 (Current / Actual)
   const [currentWidth, setCurrentWidth] = useState(205)
@@ -1407,6 +1492,628 @@ export default function TireSimulatorPage() {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  )}
+
+  {/* Tab Content: Wheel Offset */}
+  {activeTab === "offset" && (
+    <motion.div
+      initial={{ opacity: 0, y: 15 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -15 }}
+      className="space-y-6 max-w-5xl mx-auto"
+    >
+      <div className="grid lg:grid-cols-12 gap-8 items-start">
+        {/* Left Column: Form */}
+        <div className="lg:col-span-4 space-y-6 min-w-0">
+          <div className="rounded-xl border border-border/80 bg-card/40 p-5 backdrop-blur-sm space-y-4">
+            <div className="flex justify-between items-center border-b border-border/50 pb-3">
+              <h2 className="text-sm font-black uppercase tracking-wider flex items-center gap-2 text-zinc-300">
+                <span className="w-2.5 h-2.5 rounded-full bg-zinc-500" />
+                Llanta Actual
+              </h2>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-[10px] font-bold uppercase tracking-wider text-muted-foreground/80 mb-1.5">
+                  Ancho (Pulgadas)
+                </label>
+                <input
+                  type="number"
+                  step="0.5"
+                  value={offsetActualWidth}
+                  onChange={(e) => setOffsetActualWidth(parseFloat(e.target.value) || 0)}
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary text-base md:text-sm h-10 font-mono text-foreground"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold uppercase tracking-wider text-muted-foreground/80 mb-1.5">
+                  Offset (ET mm)
+                </label>
+                <input
+                  type="number"
+                  value={offsetActualEt}
+                  onChange={(e) => setOffsetActualEt(parseInt(e.target.value) || 0)}
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary text-base md:text-sm h-10 font-mono text-foreground"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-primary/20 bg-card/40 p-5 backdrop-blur-sm space-y-4">
+            <div className="flex justify-between items-center border-b border-border/50 pb-3">
+              <h2 className="text-sm font-black uppercase tracking-wider flex items-center gap-2 text-primary">
+                <span className="w-2.5 h-2.5 rounded-full bg-primary shadow-[0_0_8px_rgba(245,158,11,0.5)]" />
+                Llanta Nueva
+              </h2>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-[10px] font-bold uppercase tracking-wider text-muted-foreground/80 mb-1.5">
+                  Ancho (Pulgadas)
+                </label>
+                <input
+                  type="number"
+                  step="0.5"
+                  value={offsetNewWidth}
+                  onChange={(e) => setOffsetNewWidth(parseFloat(e.target.value) || 0)}
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary text-base md:text-sm h-10 font-mono text-foreground"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold uppercase tracking-wider text-muted-foreground/80 mb-1.5">
+                  Offset (ET mm)
+                </label>
+                <input
+                  type="number"
+                  value={offsetNewEt}
+                  onChange={(e) => setOffsetNewEt(parseInt(e.target.value) || 0)}
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary text-base md:text-sm h-10 font-mono text-foreground"
+                />
+              </div>
+            </div>
+          </div>
+
+          <button 
+            type="button" 
+            onClick={() => {
+              setOffsetActualWidth(7.0)
+              setOffsetActualEt(35)
+              setOffsetNewWidth(8.0)
+              setOffsetNewEt(25)
+            }}
+            className="w-full h-10 border border-border hover:bg-secondary/35 text-xs font-bold uppercase tracking-wider rounded-lg transition-colors flex items-center justify-center gap-2"
+          >
+            <RotateCcw className="w-3.5 h-3.5" />
+            Reiniciar Offset
+          </button>
+        </div>
+
+        {/* Right Column: Visualizer & Metrics */}
+        <div className="lg:col-span-8 space-y-6 min-w-0">
+          {/* Visualizer card */}
+          <div className="rounded-2xl border border-border/80 bg-card/25 backdrop-blur-md p-6 flex flex-col justify-between shadow-xl relative overflow-hidden">
+            <div className="absolute inset-0 bg-[linear-gradient(to_right,#1f1f23_1px,transparent_1px),linear-gradient(to_bottom,#1f1f23_1px,transparent_1px)] bg-[size:32px_32px] opacity-15 pointer-events-none" />
+            
+            <h3 className="text-xs font-bold uppercase tracking-widest text-zinc-300 mb-4">Esquema Técnico (Corte de Sección)</h3>
+            
+            {/* SVG Visualizer */}
+            <div className="flex items-center justify-center py-4 z-10 w-full overflow-auto">
+              {(() => {
+                const scaleInches = 22
+                const hubX = 250
+                const rimHeight = 220
+                const rimY = 50
+                const centerlineY = rimY + rimHeight/2
+
+                // Actual positions
+                const actCenterlineX = hubX - (offsetActualEt * scaleInches / 25.4)
+                const actInnerX = actCenterlineX - (offsetActualWidth * scaleInches / 2)
+                const actOuterX = actCenterlineX + (offsetActualWidth * scaleInches / 2)
+
+                // New positions
+                const newCenterlineX = hubX - (offsetNewEt * scaleInches / 25.4)
+                const newInnerX = newCenterlineX - (offsetNewWidth * scaleInches / 2)
+                const newOuterX = newCenterlineX + (offsetNewWidth * scaleInches / 2)
+
+                return (
+                  <svg className="bg-black/15 rounded-xl border border-border/30 shadow-inner max-w-full" width={500} height={320} viewBox="0 0 500 320">
+                    {/* Vertical Hub Line */}
+                    <line x1={hubX} y1={20} x2={hubX} y2={300} stroke="#3f3f46" strokeWidth={1} strokeDasharray="3, 3" />
+                    
+                    {/* Suspension side indicator */}
+                    <text x={30} y={40} fill="#52525b" fontSize="9" fontWeight="bold" className="uppercase tracking-widest select-none">← Suspensión (Interior)</text>
+                    {/* Tapabarro side indicator */}
+                    <text x={330} y={40} fill="#52525b" fontSize="9" fontWeight="bold" className="uppercase tracking-widest select-none">Tapabarro (Exterior) →</text>
+                    
+                    {/* Hub mounting pad */}
+                    <rect x={hubX - 8} y={100} width={8} height={120} fill="#27272a" rx={2} stroke="#3f3f46" strokeWidth={1} />
+                    
+                    {/* --- Actual Wheel (Gray dashed) --- */}
+                    <g opacity={0.4}>
+                      <rect x={actInnerX} y={rimY} width={actOuterX - actInnerX} height={10} fill="#52525b" rx={2} />
+                      <rect x={actInnerX} y={rimY + rimHeight} width={actOuterX - actInnerX} height={10} fill="#52525b" rx={2} />
+                      <rect x={actInnerX - 3} y={rimY - 4} width={5} height={18} fill="#71717a" rx={1} />
+                      <rect x={actOuterX - 2} y={rimY - 4} width={5} height={18} fill="#71717a" rx={1} />
+                      <rect x={actInnerX - 3} y={rimY + rimHeight - 4} width={5} height={18} fill="#71717a" rx={1} />
+                      <rect x={actOuterX - 2} y={rimY + rimHeight - 4} width={5} height={18} fill="#71717a" rx={1} />
+                      <line x1={actCenterlineX} y1={rimY + 10} x2={actCenterlineX} y2={rimY + rimHeight} stroke="#71717a" strokeWidth={1.5} strokeDasharray="5, 3" />
+                      <line x1={hubX} y1={centerlineY} x2={actOuterX - 10} y2={rimY + 20} stroke="#52525b" strokeWidth={2} />
+                      <line x1={hubX} y1={centerlineY} x2={actOuterX - 10} y2={rimY + rimHeight - 10} stroke="#52525b" strokeWidth={2} />
+                    </g>
+
+                    {/* --- New Wheel (Golden solid) --- */}
+                    <g>
+                      <rect x={newInnerX} y={rimY} width={newOuterX - newInnerX} height={10} fill="#d97706" rx={2} opacity={0.8} />
+                      <rect x={newInnerX} y={rimY + rimHeight} width={newOuterX - newInnerX} height={10} fill="#d97706" rx={2} opacity={0.8} />
+                      <rect x={newInnerX - 3} y={rimY - 4} width={5} height={18} fill="#f59e0b" rx={1} />
+                      <rect x={newOuterX - 2} y={rimY - 4} width={5} height={18} fill="#f59e0b" rx={1} />
+                      <rect x={newInnerX - 3} y={rimY + rimHeight - 4} width={5} height={18} fill="#f59e0b" rx={1} />
+                      <rect x={newOuterX - 2} y={rimY + rimHeight - 4} width={5} height={18} fill="#f59e0b" rx={1} />
+                      <line x1={newCenterlineX} y1={rimY + 10} x2={newCenterlineX} y2={rimY + rimHeight} stroke="#f59e0b" strokeWidth={1.5} strokeDasharray="4, 4" opacity={0.7} />
+                      <line x1={hubX} y1={centerlineY} x2={newOuterX - 10} y2={rimY + 20} stroke="#fbbf24" strokeWidth={3} strokeLinecap="round" />
+                      <line x1={hubX} y1={centerlineY} x2={newOuterX - 10} y2={rimY + rimHeight - 10} stroke="#fbbf24" strokeWidth={3} strokeLinecap="round" />
+                    </g>
+                  </svg>
+                )
+              })()}
+            </div>
+
+            <div className="z-10 border-t border-border/40 pt-4 flex justify-between items-center text-xs text-muted-foreground">
+              <span className="flex items-center gap-1.5"><Info className="w-3.5 h-3.5" /> Esquema alineado en la cara de acople del eje (ET 0).</span>
+              <span className="font-bold text-amber-500">Dorado = Nueva Llanta</span>
+            </div>
+          </div>
+
+          {/* Metrics Results Panel */}
+          <div className="grid md:grid-cols-2 gap-4">
+            {/* Espacio Interior */}
+            <div className="rounded-xl border border-border bg-card/45 p-4 space-y-2">
+              <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Clearance Interior (Hacia Suspensión)</h4>
+              <div className="flex justify-between items-baseline">
+                <span className="text-xl font-black font-mono">
+                  {offsetMetrics.innerChange === 0 ? (
+                    "Sin cambios"
+                  ) : (
+                    `${Math.abs(offsetMetrics.innerChange).toFixed(1)} mm`
+                  )}
+                </span>
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${
+                  offsetMetrics.innerChange > 0 ? "text-rose-400 bg-rose-500/10" : offsetMetrics.innerChange < 0 ? "text-emerald-400 bg-emerald-500/10" : "text-muted-foreground bg-muted/10"
+                }`}>
+                  {offsetMetrics.innerChange > 0 ? "MÁS CERCA (Menos espacio)" : offsetMetrics.innerChange < 0 ? "MÁS LEJOS (Más espacio)" : "Igual"}
+                </span>
+              </div>
+              <p className="text-[10px] text-muted-foreground">
+                {offsetMetrics.innerChange > 0 
+                  ? "La llanta sobresale hacia adentro, acercándose a la suspensión y los amortiguadores." 
+                  : offsetMetrics.innerChange < 0 
+                  ? "La nueva llanta se retrae hacia el centro, dejando más espacio libre para la suspensión." 
+                  : "Mantiene la misma distancia interior que la llanta original."}
+              </p>
+            </div>
+
+            {/* Espacio Exterior */}
+            <div className="rounded-xl border border-border bg-card/45 p-4 space-y-2">
+              <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Extensión Exterior (Hacia Tapabarro)</h4>
+              <div className="flex justify-between items-baseline">
+                <span className="text-xl font-black font-mono">
+                  {offsetMetrics.outerChange === 0 ? (
+                    "Sin cambios"
+                  ) : (
+                    `${Math.abs(offsetMetrics.outerChange).toFixed(1)} mm`
+                  )}
+                </span>
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${
+                  offsetMetrics.outerChange > 0 ? "text-emerald-400 bg-emerald-500/10" : offsetMetrics.outerChange < 0 ? "text-rose-400 bg-rose-500/10" : "text-muted-foreground bg-muted/10"
+                }`}>
+                  {offsetMetrics.outerChange > 0 ? "SOBRESALE (Más agresivo)" : offsetMetrics.outerChange < 0 ? "MÁS ADENTRO (Menos agresivo)" : "Igual"}
+                </span>
+              </div>
+              <p className="text-[10px] text-muted-foreground">
+                {offsetMetrics.outerChange > 0 
+                  ? "La nueva llanta se extiende más hacia la carrocería, logrando un fitment más ancho." 
+                  : offsetMetrics.outerChange < 0 
+                  ? "La llanta queda más metida dentro del tapabarro." 
+                  : "Mantiene exactamente la misma alineación exterior."}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  )}
+
+  {/* Tab Content: Weight/Power */}
+  {activeTab === "weight-power" && (
+    <motion.div
+      initial={{ opacity: 0, y: 15 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -15 }}
+      className="space-y-6 max-w-4xl mx-auto"
+    >
+      <div className="grid md:grid-cols-12 gap-8 items-start">
+        {/* Form Inputs */}
+        <div className="md:col-span-5 space-y-5">
+          <div className="rounded-xl border border-amber-500/20 bg-card/40 p-5 backdrop-blur-sm space-y-4 shadow-lg shadow-amber-500/5">
+            <div className="flex justify-between items-center border-b border-border/50 pb-3">
+              <h2 className="text-sm font-black uppercase tracking-wider flex items-center gap-2 text-amber-400">
+                <Gauge className="w-4 h-4 text-amber-400" />
+                Especificaciones de Performance
+              </h2>
+            </div>
+            
+            <div className="space-y-3">
+              <div>
+                <label className="block text-[10px] font-bold uppercase tracking-wider text-muted-foreground/80 mb-1">
+                  Peso del Vehículo (kg)
+                </label>
+                <input
+                  type="number"
+                  placeholder="Ej: 1050"
+                  value={weight || ""}
+                  onChange={(e) => setWeight(parseInt(e.target.value) || 0)}
+                  className="w-full rounded-lg border border-border bg-background/50 px-3 py-2.5 outline-none transition-all focus:border-amber-500/40 focus:ring-1 focus:ring-amber-500/30 text-base md:text-sm h-11 font-mono text-foreground"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold uppercase tracking-wider text-muted-foreground/80 mb-1">
+                  Potencia del Motor (HP)
+                </label>
+                <input
+                  type="number"
+                  placeholder="Ej: 120"
+                  value={powerHp || ""}
+                  onChange={(e) => setPowerHp(parseInt(e.target.value) || 0)}
+                  className="w-full rounded-lg border border-border bg-background/50 px-3 py-2.5 outline-none transition-all focus:border-amber-500/40 focus:ring-1 focus:ring-amber-500/30 text-base md:text-sm h-11 font-mono text-foreground"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold uppercase tracking-wider text-muted-foreground/80 mb-1">
+                  Tipo de Tracción
+                </label>
+                <div className="grid grid-cols-3 p-0.5 bg-secondary/40 border border-border/80 rounded-lg">
+                  {(["fwd", "rwd", "awd"] as const).map((t) => (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => setTraction(t)}
+                      className={`py-1.5 rounded-md text-[10px] font-bold transition-all uppercase tracking-wider ${
+                        traction === t ? "bg-primary text-primary-foreground shadow" : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      {t.toUpperCase()}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => {
+              setWeight(1100)
+              setPowerHp(130)
+              setTraction("fwd")
+            }}
+            className="w-full h-10 border border-border hover:bg-secondary/35 text-xs font-bold uppercase tracking-wider rounded-lg transition-colors flex items-center justify-center gap-2"
+          >
+            <RotateCcw className="w-3.5 h-3.5" />
+            Reiniciar Valores
+          </button>
+        </div>
+
+        {/* Results Panel */}
+        <div className="md:col-span-7 space-y-6">
+          <div className="rounded-xl border border-border bg-card/40 p-5 space-y-4">
+            <h3 className="text-xs font-bold uppercase tracking-widest text-zinc-300">Estimación de Prestaciones</h3>
+            
+            <div className="grid grid-cols-2 gap-4">
+              {/* Peso Potencia */}
+              <div className="bg-black/20 p-3 rounded-lg border border-border/50">
+                <span className="block text-[9px] font-bold uppercase tracking-wider text-muted-foreground">Relación Peso / Potencia</span>
+                <span className="text-lg font-black font-mono text-amber-400">
+                  {performanceMetrics.ratioWeightPower > 0 ? `${performanceMetrics.ratioWeightPower.toFixed(2)} ` : "0 "}
+                  <span className="text-xs text-muted-foreground">kg/HP</span>
+                </span>
+              </div>
+
+              {/* Potencia Tonelada */}
+              <div className="bg-black/20 p-3 rounded-lg border border-border/50">
+                <span className="block text-[9px] font-bold uppercase tracking-wider text-muted-foreground">Relación Potencia / Peso</span>
+                <span className="text-lg font-black font-mono text-zinc-300">
+                  {performanceMetrics.ratioPowerWeight > 0 ? `${performanceMetrics.ratioPowerWeight.toFixed(1)} ` : "0 "}
+                  <span className="text-xs text-muted-foreground">HP/ton</span>
+                </span>
+              </div>
+
+              {/* 0-100 */}
+              <div className="bg-black/20 p-3 rounded-lg border border-border/50 col-span-2">
+                <span className="block text-[9px] font-bold uppercase tracking-wider text-muted-foreground">Aceleración 0 a 100 km/h (Est.)</span>
+                <span className="text-2xl font-black font-mono text-emerald-400 block mt-1">
+                  {performanceMetrics.ratioWeightPower > 0 ? `${performanceMetrics.zeroTo100.toFixed(1)} ` : "-- "}
+                  <span className="text-xs text-muted-foreground">segundos</span>
+                </span>
+                <span className="text-[9px] text-muted-foreground block mt-1">
+                  *Cálculo estimativo para coeficiente de arrastre promedio con neumáticos de calle.
+                </span>
+              </div>
+
+              {/* 1/4 milla */}
+              <div className="bg-black/20 p-3 rounded-lg border border-border/50 col-span-2">
+                <span className="block text-[9px] font-bold uppercase tracking-wider text-muted-foreground">1/4 de Milla (Est.)</span>
+                <div className="flex justify-between items-baseline mt-1">
+                  <span className="text-xl font-black font-mono text-zinc-100">
+                    {performanceMetrics.ratioWeightPower > 0 ? `${performanceMetrics.quarterMileTime.toFixed(2)} ` : "-- "}
+                    <span className="text-xs text-muted-foreground">segundos</span>
+                  </span>
+                  <span className="text-sm font-black font-mono text-zinc-300">
+                    @ {performanceMetrics.ratioWeightPower > 0 ? `${performanceMetrics.quarterMileSpeed.toFixed(1)} ` : "-- "}
+                    <span className="text-xs text-muted-foreground">km/h</span>
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Reference Table */}
+          <div className="rounded-xl border border-border bg-card/40 overflow-hidden text-xs">
+            <div className="p-3 bg-secondary/15 border-b border-border/60 font-bold uppercase tracking-wider text-zinc-300">
+              Referencias y Equivalencias de Rendimiento
+            </div>
+            <div className="divide-y divide-border/40 font-mono">
+              <div className="grid grid-cols-3 p-2 text-[10px] text-muted-foreground font-bold uppercase">
+                <div>Vehículo de Referencia</div>
+                <div className="text-center">Peso/Potencia</div>
+                <div className="text-right">0-100 km/h (Real)</div>
+              </div>
+              <div className="grid grid-cols-3 p-2 hover:bg-secondary/10 transition-colors">
+                <div>Yaris MK1 Stock</div>
+                <div className="text-center">~11.5 kg/HP</div>
+                <div className="text-right text-muted-foreground">11.2 s</div>
+              </div>
+              <div className="grid grid-cols-3 p-2 hover:bg-secondary/10 transition-colors">
+                <div>Cerato Koup 2.0</div>
+                <div className="text-center">~8.3 kg/HP</div>
+                <div className="text-right text-muted-foreground">8.9 s</div>
+              </div>
+              <div className="grid grid-cols-3 p-2 hover:bg-secondary/10 transition-colors">
+                <div>Civic VTI B16</div>
+                <div className="text-center">~6.5 kg/HP</div>
+                <div className="text-right text-muted-foreground">7.4 s</div>
+              </div>
+              {performanceMetrics.ratioWeightPower > 0 && (
+                <div className="grid grid-cols-3 p-2 bg-primary/10 text-primary font-bold border-y border-primary/20">
+                  <div>Tu Auto (Estimado)</div>
+                  <div className="text-center">{performanceMetrics.ratioWeightPower.toFixed(1)} kg/HP</div>
+                  <div className="text-right">{performanceMetrics.zeroTo100.toFixed(1)} s</div>
+                </div>
+              )}
+              <div className="grid grid-cols-3 p-2 hover:bg-secondary/10 transition-colors">
+                <div>Golf GTI MK7</div>
+                <div className="text-center">~5.1 kg/HP</div>
+                <div className="text-right text-muted-foreground">6.4 s</div>
+              </div>
+              <div className="grid grid-cols-3 p-2 hover:bg-secondary/10 transition-colors">
+                <div>Porsche 911 GT3</div>
+                <div className="text-center">~2.8 kg/HP</div>
+                <div className="text-right text-muted-foreground">3.4 s</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  )}
+
+  {/* Tab Content: Displacement / Engine */}
+  {activeTab === "displacement" && (
+    <motion.div
+      initial={{ opacity: 0, y: 15 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -15 }}
+      className="space-y-6 max-w-4xl mx-auto"
+    >
+      <div className="grid md:grid-cols-12 gap-8 items-start">
+        {/* Form Inputs */}
+        <div className="md:col-span-5 space-y-5">
+          <div className="rounded-xl border border-border/80 bg-card/40 p-5 backdrop-blur-sm space-y-4">
+            <div className="flex justify-between items-center border-b border-border/50 pb-3">
+              <h2 className="text-sm font-black uppercase tracking-wider flex items-center gap-2 text-zinc-300">
+                <Wrench className="w-4 h-4 text-primary" />
+                Cilindrada del Motor
+              </h2>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-[10px] font-bold uppercase tracking-wider text-muted-foreground/80 mb-1">
+                  Bore / Diámetro (mm)
+                </label>
+                <input
+                  type="number"
+                  step="0.1"
+                  value={bore || ""}
+                  onChange={(e) => setBore(parseFloat(e.target.value) || 0)}
+                  className="w-full rounded-lg border border-border bg-background/50 px-3 py-2 outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary text-base md:text-sm h-10 font-mono text-foreground"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold uppercase tracking-wider text-muted-foreground/80 mb-1">
+                  Stroke / Carrera (mm)
+                </label>
+                <input
+                  type="number"
+                  step="0.1"
+                  value={stroke || ""}
+                  onChange={(e) => setStroke(parseFloat(e.target.value) || 0)}
+                  className="w-full rounded-lg border border-border bg-background/50 px-3 py-2 outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary text-base md:text-sm h-10 font-mono text-foreground"
+                />
+              </div>
+
+              <div className="col-span-2">
+                <label className="block text-[10px] font-bold uppercase tracking-wider text-muted-foreground/80 mb-1">
+                  Cantidad de Cilindros
+                </label>
+                <select
+                  value={cylinders}
+                  onChange={(e) => setCylinders(parseInt(e.target.value))}
+                  className="w-full rounded-lg border border-border bg-background/50 px-3 py-2 outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary text-base md:text-sm h-10 font-mono text-foreground"
+                >
+                  {[1, 2, 3, 4, 5, 6, 8, 10, 12].map((num) => (
+                    <option key={num} value={num}>{num} Cilindros</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-primary/20 bg-card/40 p-5 backdrop-blur-sm space-y-4">
+            <div className="flex justify-between items-center border-b border-border/50 pb-3">
+              <h2 className="text-sm font-black uppercase tracking-wider flex items-center gap-2 text-primary">
+                <Sparkles className="w-4 h-4 text-primary" />
+                Relación de Compresión (Opcional)
+              </h2>
+            </div>
+            
+            <div className="space-y-3">
+              <div>
+                <label className="block text-[10px] font-bold uppercase tracking-wider text-muted-foreground/80 mb-1">
+                  Volumen de Cámara (cc / cm³)
+                </label>
+                <input
+                  type="number"
+                  placeholder="Ej: 35.0"
+                  value={chamberVolume}
+                  onChange={(e) => setChamberVolume(e.target.value)}
+                  className="w-full rounded-lg border border-border bg-background/50 px-3 py-2 outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary text-base md:text-sm h-10 font-mono text-foreground placeholder:text-muted-foreground/30"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[9px] font-bold uppercase tracking-wider text-muted-foreground/80 mb-1">
+                    Junta Culata (mm)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    placeholder="Ej: 1.0"
+                    value={gasketThickness}
+                    onChange={(e) => setGasketThickness(e.target.value)}
+                    className="w-full rounded-lg border border-border bg-background/50 px-3 py-2 outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary text-base md:text-sm h-10 font-mono text-foreground placeholder:text-muted-foreground/30"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[9px] font-bold uppercase tracking-wider text-muted-foreground/80 mb-1">
+                    Bore Junta (mm)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    placeholder="Bore"
+                    value={gasketBore}
+                    onChange={(e) => setGasketBore(e.target.value)}
+                    className="w-full rounded-lg border border-border bg-background/50 px-3 py-2 outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary text-base md:text-sm h-10 font-mono text-foreground placeholder:text-muted-foreground/30"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => {
+              setBore(75.0)
+              setStroke(84.7)
+              setCylinders(4)
+              setChamberVolume("")
+              setGasketThickness("")
+              setGasketBore("")
+            }}
+            className="w-full h-10 border border-border hover:bg-secondary/35 text-xs font-bold uppercase tracking-wider rounded-lg transition-colors flex items-center justify-center gap-2"
+          >
+            <RotateCcw className="w-3.5 h-3.5" />
+            Reiniciar Motor
+          </button>
+        </div>
+
+        {/* Results Panel */}
+        <div className="md:col-span-7 space-y-6">
+          <div className="rounded-xl border border-border bg-card/40 p-5 space-y-4">
+            <h3 className="text-xs font-bold uppercase tracking-widest text-zinc-300">Cálculos de Desplazamiento y Compresión</h3>
+            
+            <div className="space-y-4">
+              {/* Cilindrada total */}
+              <div className="bg-black/20 p-4 rounded-lg border border-border/50">
+                <span className="block text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Cilindrada Total</span>
+                <div className="flex justify-between items-baseline mt-1">
+                  <span className="text-2xl font-black font-mono text-amber-400">
+                    {engineMetrics.totalCc.toLocaleString("es-CL", { maximumFractionDigits: 0 })} <span className="text-sm text-muted-foreground">cc</span>
+                  </span>
+                  <span className="text-lg font-black font-mono text-zinc-300">
+                    {(engineMetrics.totalCc / 1000).toFixed(1)} <span className="text-xs text-muted-foreground">Litros</span>
+                  </span>
+                </div>
+              </div>
+
+              {/* Cilindrada unitaria */}
+              <div className="bg-black/20 p-3 rounded-lg border border-border/50">
+                <span className="block text-[9px] font-bold uppercase tracking-wider text-muted-foreground">Cilindrada Unitaria (Por Cilindro)</span>
+                <span className="text-lg font-black font-mono text-zinc-200">
+                  {engineMetrics.unitCc.toFixed(1)} <span className="text-xs text-muted-foreground">cc / cm³</span>
+                </span>
+              </div>
+
+              {/* Relación de compresión */}
+              <div className="bg-black/20 p-4 rounded-lg border border-border/50">
+                <span className="block text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Relación de Compresión Dinámica (Est.)</span>
+                {engineMetrics.compressionRatio ? (
+                  <div className="flex items-baseline justify-between mt-1">
+                    <span className="text-3xl font-black font-mono text-emerald-400">
+                      {engineMetrics.compressionRatio.toFixed(2)}:1
+                    </span>
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${
+                      engineMetrics.compressionRatio < 9.5 
+                        ? "text-blue-400 bg-blue-500/10" 
+                        : engineMetrics.compressionRatio < 11.5 
+                        ? "text-emerald-400 bg-emerald-500/10" 
+                        : "text-amber-400 bg-amber-500/10"
+                    }`}>
+                      {engineMetrics.compressionRatio < 9.5 
+                        ? "Ideal para Turbo/Soplado" 
+                        : engineMetrics.compressionRatio < 11.5 
+                        ? "Compresión Alta (Aspirado Calle)" 
+                        : "Compresión Muy Alta (Deportivo/Pista)"}
+                    </span>
+                  </div>
+                ) : (
+                  <div className="text-muted-foreground text-xs py-2">
+                    Ingresa el volumen de cámara en la izquierda para calcular la compresión del motor.
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-muted/10 border border-border/50 rounded-xl p-4 flex gap-3 text-xs text-muted-foreground">
+            <Info className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+            <p>
+              **Glosario:**
+              <br />
+              - **Bore:** Diámetro interior de cada cilindro.
+              <br />
+              - **Stroke:** Recorrido vertical del pistón desde el punto muerto inferior al superior.
+              <br />
+              - **Volumen de Cámara:** Espacio libre en la culata donde ocurre la combustión con el pistón arriba.
+            </p>
           </div>
         </div>
       </div>
