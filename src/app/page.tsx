@@ -5,15 +5,30 @@ import { SearchBar } from "@/components/search-bar"
 import { getStoreSettings } from "@/actions/settings"
 import { Car, Gauge, MapPin } from "lucide-react"
 
+export const dynamic = "force-dynamic"
+
 export default async function Home() {
   const latestProducts = await prisma.product.findMany({
     orderBy: { createdAt: 'desc' },
     take: 12
   })
 
+  // Get all vehicle IDs to perform a lightweight random selection in memory
+  const allVehicleIds = await prisma.vehicle.findMany({
+    select: { id: true }
+  })
+
+  // Shuffle IDs and select up to 3
+  const randomIds = allVehicleIds
+    .sort(() => 0.5 - Math.random())
+    .slice(0, 3)
+    .map((v) => v.id)
+
+  // Fetch only the 3 randomly selected vehicles
   const latestVehicles = await prisma.vehicle.findMany({
-    orderBy: { createdAt: 'desc' },
-    take: 3
+    where: {
+      id: { in: randomIds }
+    }
   })
   
   const baseUrl = 'https://unknown-club.store'
