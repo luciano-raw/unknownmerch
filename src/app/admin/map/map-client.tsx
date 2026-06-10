@@ -19,6 +19,7 @@ interface Vehicle {
   year: number
   suspension: string
   instagram: string | null
+  images: string[]
 }
 
 interface MapProfile {
@@ -32,7 +33,9 @@ interface MapProfile {
     brand: string
     model: string
     year: number
+    suspension: string
     instagram: string | null
+    images: string[]
   }
 }
 
@@ -48,6 +51,10 @@ export function MapClient({ vehicles, mapProfiles, mapAreaColor }: MapClientProp
   
   // Form state
   const [selectedVehicleId, setSelectedVehicleId] = useState("")
+  const [isOpen, setIsOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState("")
+
+  const selectedVehicle = vehicles.find((v) => v.id === selectedVehicleId)
   const [latitude, setLatitude] = useState<number | null>(null)
   const [longitude, setLongitude] = useState<number | null>(null)
   const [radius, setRadius] = useState<number>(4000) // Default 4km
@@ -148,22 +155,109 @@ export function MapClient({ vehicles, mapProfiles, mapAreaColor }: MapClientProp
             </h2>
 
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
+              <div className="relative">
                 <label className={labelClasses}>Vehículo</label>
-                <select
-                  required
-                  value={selectedVehicleId}
-                  onChange={(e) => setSelectedVehicleId(e.target.value)}
-                  className={selectClasses}
+                
+                {/* Custom select trigger button */}
+                <button
+                  type="button"
+                  onClick={() => !isPending && setIsOpen(!isOpen)}
                   disabled={isPending}
+                  className="w-full rounded-lg border border-border bg-background/50 text-foreground px-4 py-2 flex items-center justify-between transition-all focus:border-primary focus:ring-1 focus:ring-primary text-sm min-h-[50px] cursor-pointer text-left disabled:opacity-50"
                 >
-                  <option value="">Selecciona un vehículo...</option>
-                  {availableVehicles.map((v) => (
-                    <option key={v.id} value={v.id}>
-                      {v.brand} {v.model} ({v.year})
-                    </option>
-                  ))}
-                </select>
+                  {selectedVehicle ? (
+                    <div className="flex items-center gap-3">
+                      <img
+                        src={selectedVehicle.images[0] || "/placeholder.png"}
+                        alt=""
+                        className="w-8 h-8 rounded bg-secondary object-cover flex-shrink-0"
+                      />
+                      <div className="leading-tight">
+                        <p className="font-bold text-sm">
+                          {selectedVehicle.brand} {selectedVehicle.model}
+                        </p>
+                        <p className="text-[10px] text-muted-foreground font-semibold uppercase">
+                          {selectedVehicle.suspension} • {selectedVehicle.year}
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <span className="text-muted-foreground/80">Selecciona un vehículo...</span>
+                  )}
+                  <span className="text-muted-foreground/60 text-xs">▼</span>
+                </button>
+
+                {/* Dropdown panel */}
+                {isOpen && (
+                  <>
+                    {/* Backdrop to close */}
+                    <div className="fixed inset-0 z-10" onClick={() => setIsOpen(false)} />
+                    
+                    <div className="absolute z-20 mt-1 w-full rounded-xl border border-border bg-background shadow-2xl p-2 max-h-72 overflow-y-auto space-y-2 animate-in fade-in slide-in-from-top-1 duration-150">
+                      {/* Search Input */}
+                      <div className="relative pb-1">
+                        <input
+                          type="text"
+                          placeholder="Buscar vehículo..."
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          className="w-full rounded-lg border border-border bg-muted/20 px-3 py-1.5 text-xs outline-none focus:border-primary"
+                        />
+                      </div>
+                      
+                      {(() => {
+                        const filtered = availableVehicles.filter(v => 
+                          `${v.brand} ${v.model} ${v.suspension} ${v.year}`.toLowerCase().includes(searchQuery.toLowerCase())
+                        )
+                        
+                        if (filtered.length === 0) {
+                          return <p className="p-3 text-center text-xs text-muted-foreground">No se encontraron vehículos</p>
+                        }
+                        
+                        return (
+                          <div className="space-y-1">
+                            {filtered.map((v) => {
+                              const isCurrentlySelected = v.id === selectedVehicleId
+                              return (
+                                <button
+                                  key={v.id}
+                                  type="button"
+                                  onClick={() => {
+                                    setSelectedVehicleId(v.id)
+                                    setIsOpen(false)
+                                    setSearchQuery("")
+                                  }}
+                                  className={`w-full flex items-center gap-3 p-2 rounded-lg text-left transition-colors ${
+                                    isCurrentlySelected 
+                                      ? "bg-primary/15 text-primary border border-primary/20" 
+                                      : "hover:bg-muted/40 text-foreground border border-transparent"
+                                  }`}
+                                >
+                                  <img
+                                    src={v.images[0] || "/placeholder.png"}
+                                    alt=""
+                                    className="w-9 h-9 rounded bg-secondary object-cover flex-shrink-0"
+                                  />
+                                  <div className="leading-tight flex-1">
+                                    <p className="font-extrabold text-xs">
+                                      {v.brand} {v.model}
+                                    </p>
+                                    <p className="text-[10px] text-muted-foreground font-semibold uppercase mt-0.5">
+                                      {v.suspension} • {v.year}
+                                    </p>
+                                  </div>
+                                  {isCurrentlySelected && (
+                                    <span className="text-primary font-bold text-xs mr-1">✓</span>
+                                  )}
+                                </button>
+                              )
+                            })}
+                          </div>
+                        )
+                      })()}
+                    </div>
+                  </>
+                )}
                 {availableVehicles.length === 0 && (
                   <p className="mt-1 text-xs text-amber-500">
                     No hay vehículos registrados en el garage aún.
@@ -321,7 +415,21 @@ export function MapClient({ vehicles, mapProfiles, mapAreaColor }: MapClientProp
                   {mapProfiles.map((profile) => (
                     <tr key={profile.id} className="hover:bg-muted/5 transition-colors">
                       <td className="py-3 px-4 font-medium">
-                        {profile.vehicle.brand} {profile.vehicle.model} ({profile.vehicle.year})
+                        <div className="flex items-center gap-3">
+                          <img
+                            src={profile.vehicle.images[0] || "/placeholder.png"}
+                            alt=""
+                            className="w-10 h-10 rounded bg-secondary object-cover flex-shrink-0"
+                          />
+                          <div className="leading-tight">
+                            <p className="font-bold text-sm">
+                              {profile.vehicle.brand} {profile.vehicle.model}
+                            </p>
+                            <p className="text-[10px] text-muted-foreground font-semibold uppercase mt-0.5">
+                              {profile.vehicle.suspension} • {profile.vehicle.year}
+                            </p>
+                          </div>
+                        </div>
                       </td>
                       <td className="py-3 px-4 font-mono text-xs text-muted-foreground">
                         {profile.latitude.toFixed(6)}, {profile.longitude.toFixed(6)}
@@ -363,18 +471,25 @@ export function MapClient({ vehicles, mapProfiles, mapAreaColor }: MapClientProp
             <div className="grid gap-4 md:hidden">
               {mapProfiles.map((profile) => (
                 <div key={profile.id} className="border border-border rounded-xl p-4 bg-muted/5 hover:bg-muted/10 transition-colors flex justify-between items-start">
-                  <div className="space-y-1">
-                    <p className="font-bold text-sm">
-                      {profile.vehicle.brand} {profile.vehicle.model}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      Año: {profile.vehicle.year}
-                    </p>
-                    <p className="text-xs font-mono text-muted-foreground/80">
-                      Coordenadas: {profile.latitude.toFixed(4)}, {profile.longitude.toFixed(4)}
-                    </p>
-                    <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 text-[10px] text-primary font-bold">
-                      Radio: {(profile.radius / 1000).toFixed(1)} km
+                  <div className="flex gap-3 items-start flex-1 min-w-0">
+                    <img
+                      src={profile.vehicle.images[0] || "/placeholder.png"}
+                      alt=""
+                      className="w-12 h-12 rounded bg-secondary object-cover flex-shrink-0"
+                    />
+                    <div className="space-y-1 min-w-0 flex-1">
+                      <p className="font-bold text-sm truncate">
+                        {profile.vehicle.brand} {profile.vehicle.model}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {profile.vehicle.suspension} • {profile.vehicle.year}
+                      </p>
+                      <p className="text-xs font-mono text-muted-foreground/80 truncate">
+                        Coordenadas: {profile.latitude.toFixed(4)}, {profile.longitude.toFixed(4)}
+                      </p>
+                      <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 text-[10px] text-primary font-bold">
+                        Radio: {(profile.radius / 1000).toFixed(1)} km
+                      </div>
                     </div>
                   </div>
                   <div className="flex gap-2">

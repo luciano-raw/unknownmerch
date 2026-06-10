@@ -25,7 +25,9 @@ export default async function AdminMapPage() {
       brand: p.vehicle?.brand || "",
       model: p.vehicle?.model || "",
       year: p.vehicle?.year || 0,
+      suspension: p.vehicle?.suspension || "",
       instagram: p.vehicle?.instagram || null,
+      images: p.vehicle?.images || [],
     }
   }))
 
@@ -36,6 +38,7 @@ export default async function AdminMapPage() {
     year: v.year,
     suspension: v.suspension,
     instagram: v.instagram,
+    images: v.images || [],
   }))
 
   return (
