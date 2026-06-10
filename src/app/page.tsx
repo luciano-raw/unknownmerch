@@ -138,6 +138,7 @@ export default async function Home() {
                       src={vehicle.images[0] || "/placeholder.png"} 
                       alt={`${vehicle.brand} ${vehicle.model}`} 
                       className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" 
+                      style={{ objectPosition: vehicle.imagePosition || 'center' }}
                     />
                   </div>
                   <div className="p-4">
