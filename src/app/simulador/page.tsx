@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { Sparkles, RotateCcw, HelpCircle, Info, Gauge, Eye, LayoutGrid } from "lucide-react"
+import { Sparkles, RotateCcw, HelpCircle, Info, Gauge, Eye, LayoutGrid, Wrench, Copy, Check, ArrowRightLeft } from "lucide-react"
 
 // Width, aspect ratio, and rim diameter presets
 const WIDTH_PRESETS = [145, 155, 165, 175, 185, 195, 205, 215, 225, 235, 245, 255, 265, 275, 285, 295, 305, 315, 325, 335]
@@ -16,6 +16,157 @@ interface TireSpec {
 }
 
 export default function TireSimulatorPage() {
+  // Active Tab state and tools definition
+  const [activeTab, setActiveTab] = useState<"tire-comparator" | "unit-converter">("tire-comparator")
+
+  const tabs = [
+    { id: "tire-comparator", label: "Comparador Neumáticos", icon: "🛞", active: true },
+    { id: "unit-converter", label: "Convertidor Mecánico", icon: "🔧", active: true },
+    { id: "offset", label: "Offset Llantas", icon: "📐", active: false },
+    { id: "weight-power", label: "Peso / Potencia", icon: "⚡", active: false },
+    { id: "displacement", label: "Cilindrada", icon: "⚙️", active: false },
+  ]
+
+  // --- Torque State ---
+  const [torque, setTorque] = useState({ nm: "", lbft: "", kgm: "" })
+  const handleTorqueChange = (unit: "nm" | "lbft" | "kgm", valStr: string) => {
+    if (valStr === "") {
+      setTorque({ nm: "", lbft: "", kgm: "" })
+      return
+    }
+    const val = parseFloat(valStr)
+    if (isNaN(val)) {
+      setTorque(prev => ({ ...prev, [unit]: valStr }))
+      return
+    }
+    if (unit === "nm") {
+      setTorque({
+        nm: valStr,
+        lbft: (val * 0.73756).toFixed(3),
+        kgm: (val * 0.10197).toFixed(3),
+      })
+    } else if (unit === "lbft") {
+      setTorque({
+        nm: (val * 1.35582).toFixed(3),
+        lbft: valStr,
+        kgm: (val * 0.13825).toFixed(3),
+      })
+    } else {
+      setTorque({
+        nm: (val * 9.80665).toFixed(3),
+        lbft: (val * 7.23301).toFixed(3),
+        kgm: valStr,
+      })
+    }
+  }
+
+  // --- Pressure State ---
+  const [pressure, setPressure] = useState({ psi: "", bar: "", kpa: "" })
+  const handlePressureChange = (unit: "psi" | "bar" | "kpa", valStr: string) => {
+    if (valStr === "") {
+      setPressure({ psi: "", bar: "", kpa: "" })
+      return
+    }
+    const val = parseFloat(valStr)
+    if (isNaN(val)) {
+      setPressure(prev => ({ ...prev, [unit]: valStr }))
+      return
+    }
+    if (unit === "psi") {
+      setPressure({
+        psi: valStr,
+        bar: (val * 0.0689476).toFixed(3),
+        kpa: (val * 6.89476).toFixed(2),
+      })
+    } else if (unit === "bar") {
+      setPressure({
+        psi: (val * 14.5038).toFixed(2),
+        bar: valStr,
+        kpa: (val * 100).toFixed(1),
+      })
+    } else {
+      setPressure({
+        psi: (val * 0.145038).toFixed(2),
+        bar: (val * 0.01).toFixed(3),
+        kpa: valStr,
+      })
+    }
+  }
+
+  // --- Speed State ---
+  const [speed, setSpeed] = useState({ mph: "", kmh: "" })
+  const handleSpeedChange = (unit: "mph" | "kmh", valStr: string) => {
+    if (valStr === "") {
+      setSpeed({ mph: "", kmh: "" })
+      return
+    }
+    const val = parseFloat(valStr)
+    if (isNaN(val)) {
+      setSpeed(prev => ({ ...prev, [unit]: valStr }))
+      return
+    }
+    if (unit === "mph") {
+      setSpeed({
+        mph: valStr,
+        kmh: (val * 1.609344).toFixed(2),
+      })
+    } else {
+      setSpeed({
+        mph: (val * 0.621371).toFixed(2),
+        kmh: valStr,
+      })
+    }
+  }
+
+  // --- Power State ---
+  const [power, setPower] = useState({ hp: "", cv: "", kw: "" })
+  const handlePowerChange = (unit: "hp" | "cv" | "kw", valStr: string) => {
+    if (valStr === "") {
+      setPower({ hp: "", cv: "", kw: "" })
+      return
+    }
+    const val = parseFloat(valStr)
+    if (isNaN(val)) {
+      setPower(prev => ({ ...prev, [unit]: valStr }))
+      return
+    }
+    if (unit === "hp") {
+      setPower({
+        hp: valStr,
+        cv: (val * 1.01387).toFixed(2),
+        kw: (val * 0.7457).toFixed(2),
+      })
+    } else if (unit === "cv") {
+      setPower({
+        hp: (val * 0.98632).toFixed(2),
+        cv: valStr,
+        kw: (val * 0.7355).toFixed(2),
+      })
+    } else {
+      setPower({
+        hp: (val * 1.34102).toFixed(2),
+        cv: (val * 1.35962).toFixed(2),
+        kw: valStr,
+      })
+    }
+  }
+
+  // --- Copy / Clear States ---
+  const [copiedField, setCopiedField] = useState<string | null>(null)
+  const copyToClipboard = (text: string, fieldKey: string) => {
+    if (!text) return
+    navigator.clipboard.writeText(text)
+    setCopiedField(fieldKey)
+    setTimeout(() => setCopiedField(null), 1500)
+  }
+
+  const handleClearSection = (section: "torque" | "pressure" | "speed" | "power") => {
+    if (section === "torque") setTorque({ nm: "", lbft: "", kgm: "" })
+    else if (section === "pressure") setPressure({ psi: "", bar: "", kpa: "" })
+    else if (section === "speed") setSpeed({ mph: "", kmh: "" })
+    else if (section === "power") setPower({ hp: "", cv: "", kw: "" })
+  }
+
   // States for Tire 1 (Current / Actual)
   const [currentWidth, setCurrentWidth] = useState(205)
   const [currentProfile, setCurrentProfile] = useState(55)
@@ -310,27 +461,82 @@ export default function TireSimulatorPage() {
   }, [metrics])
 
   const labelClasses = "block text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-1.5"
-  const selectClasses = "w-full rounded-lg border border-border bg-background px-3 py-2 outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary text-sm h-10 font-mono text-foreground"
-  const inputNumberClasses = "w-full rounded-lg border border-border bg-background px-3 py-2 outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary text-sm h-10 font-mono text-foreground placeholder:text-muted-foreground/45"
+  const selectClasses = "w-full rounded-lg border border-border bg-background px-3 py-2 outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary text-base md:text-sm h-10 font-mono text-foreground"
+  const inputNumberClasses = "w-full rounded-lg border border-border bg-background px-3 py-2 outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary text-base md:text-sm h-10 font-mono text-foreground placeholder:text-muted-foreground/45"
+
+  const torqueInputClasses = "w-full rounded-lg border border-border bg-background/50 px-3 py-2.5 outline-none transition-all focus:border-red-500/40 focus:ring-1 focus:ring-red-500/30 text-base md:text-sm h-11 font-mono text-foreground pr-10"
+  const pressureInputClasses = "w-full rounded-lg border border-border bg-background/50 px-3 py-2.5 outline-none transition-all focus:border-blue-500/40 focus:ring-1 focus:ring-blue-500/30 text-base md:text-sm h-11 font-mono text-foreground pr-10"
+  const speedInputClasses = "w-full rounded-lg border border-border bg-background/50 px-3 py-2.5 outline-none transition-all focus:border-emerald-500/40 focus:ring-1 focus:ring-emerald-500/30 text-base md:text-sm h-11 font-mono text-foreground pr-10"
+  const powerInputClasses = "w-full rounded-lg border border-border bg-background/50 px-3 py-2.5 outline-none transition-all focus:border-amber-500/40 focus:ring-1 focus:ring-amber-500/30 text-base md:text-sm h-11 font-mono text-foreground pr-10"
 
   return (
     <div className="min-h-screen bg-background text-foreground py-12 px-4 md:px-6 max-w-7xl mx-auto space-y-8">
       {/* Header Section */}
-      <div className="flex flex-col items-center text-center max-w-3xl mx-auto mb-10">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-primary/30 bg-primary/5 text-primary text-xs font-bold uppercase tracking-wider mb-4">
-          <Sparkles className="w-3.5 h-3.5" /> Simulador Técnico
+      <div className="flex flex-col items-center text-center max-w-3xl mx-auto mb-6">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-primary/30 bg-primary/5 text-primary text-xs font-bold uppercase tracking-wider mb-4 animate-pulse">
+          <Wrench className="w-3.5 h-3.5" /> Garage Toolbox
         </div>
-        <h1 className="text-3xl md:text-5xl font-black tracking-tight mb-3 uppercase italic">
-          Comparador de Neumáticos
+        <h1 className="text-3xl md:text-5xl font-black tracking-tight mb-3 uppercase italic text-foreground">
+          Herramientas Técnicas
         </h1>
         <p className="text-muted-foreground text-xs md:text-sm max-w-xl">
-          Visualiza proporcionalmente y en tiempo real el impacto de cambiar las medidas de tus neumáticos y llantas. Consulta las tolerancias físicas recomendadas.
+          Utilidades y simuladores de ingeniería para entusiastas del club y mecánicos de taller.
         </p>
       </div>
 
-      <div className="grid lg:grid-cols-12 gap-8 items-start">
+      {/* Tabs Navigation */}
+      <div className="flex flex-wrap gap-2 justify-center pb-6 border-b border-border/40 max-w-4xl mx-auto">
+        {tabs.map((tab) => {
+          const isSelected = activeTab === tab.id
+          if (!tab.active) {
+            return (
+              <div
+                key={tab.id}
+                className="px-4 py-2.5 rounded-xl border border-border/30 bg-card/25 text-muted-foreground/45 text-xs font-bold uppercase tracking-wider flex items-center gap-2 cursor-not-allowed select-none"
+              >
+                <span>{tab.icon}</span>
+                <span>{tab.label}</span>
+                <span className="text-[9px] bg-muted/20 text-muted-foreground/60 px-1.5 py-0.5 rounded font-mono">
+                  Próximamente
+                </span>
+              </div>
+            )
+          }
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => {
+                if (typeof document !== "undefined") {
+                  (document.activeElement as HTMLElement)?.blur()
+                }
+                setActiveTab(tab.id as any)
+              }}
+              className={`relative px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 border ${
+                isSelected
+                  ? "bg-primary text-primary-foreground border-primary shadow-lg shadow-primary/10"
+                  : "bg-card/40 text-muted-foreground hover:text-foreground border-border hover:bg-secondary/25"
+              }`}
+            >
+              <span>{tab.icon}</span>
+              <span>{tab.label}</span>
+              {isSelected && (
+                <motion.div
+                  layoutId="activeTabGlow"
+                  className="absolute -inset-px rounded-xl border border-primary pointer-events-none"
+                  transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                />
+              )}
+            </button>
+          )
+        })}
+      </div>
+
+      {/* Tab Content: Tire Comparator */}
+      {activeTab === "tire-comparator" && (
+        <div className="grid lg:grid-cols-12 gap-8 items-start">
         {/* Left Column: Size Forms */}
-        <div className="lg:col-span-4 space-y-6">
+        <div className="lg:col-span-4 space-y-6 min-w-0">
           {/* Tire 1 (Current) Card */}
           <div className="rounded-xl border border-border/80 bg-card/40 p-5 backdrop-blur-sm space-y-4">
             <div className="flex justify-between items-center border-b border-border/50 pb-3">
@@ -539,7 +745,7 @@ export default function TireSimulatorPage() {
         </div>
 
         {/* Right Column: Visualizer & Metrics Table */}
-        <div className="lg:col-span-8 space-y-6">
+        <div className="lg:col-span-8 space-y-6 min-w-0">
           {/* Visualizer Frame */}
           <div className="rounded-2xl border border-border/80 bg-card/25 backdrop-blur-md p-6 flex flex-col justify-between min-h-[500px] shadow-xl relative overflow-hidden">
             {/* Overlay Grid lines decoration */}
@@ -722,7 +928,8 @@ export default function TireSimulatorPage() {
               <span className="text-[10px] font-mono text-muted-foreground">Unidades en milímetros (mm) / pulgadas (")</span>
             </div>
             
-            <div className="divide-y divide-border/50 text-xs font-mono">
+            <div className="overflow-x-auto">
+              <div className="divide-y divide-border/50 text-xs font-mono min-w-[580px]">
               {/* Header row */}
               <div className="grid grid-cols-4 p-3 font-bold text-muted-foreground uppercase text-[10px]">
                 <div>Métrica</div>
@@ -808,5 +1015,403 @@ export default function TireSimulatorPage() {
         </div>
       </div>
     </div>
-  )
+  )}
+
+  {/* Tab Content: Mechanical Converter */}
+  {activeTab === "unit-converter" && (
+    <motion.div
+      initial={{ opacity: 0, y: 15 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -15 }}
+      className="space-y-6 max-w-4xl mx-auto"
+    >
+      <div className="grid md:grid-cols-2 gap-6">
+        {/* Torque Card */}
+        <div className="rounded-xl border border-red-500/20 bg-card/40 p-5 backdrop-blur-sm space-y-4 shadow-lg shadow-red-500/5">
+          <div className="flex justify-between items-center border-b border-border/50 pb-3">
+            <h2 className="text-sm font-black uppercase tracking-wider flex items-center gap-2 text-red-400">
+              <Wrench className="w-4 h-4 text-red-400" />
+              Torque (Par Motor)
+            </h2>
+            <button
+              type="button"
+              onClick={() => handleClearSection("torque")}
+              className="text-[10px] uppercase font-bold text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Limpiar
+            </button>
+          </div>
+
+          <div className="space-y-3">
+            {/* Newton-metro */}
+            <div>
+              <label className="block text-[10px] font-bold uppercase tracking-wider text-muted-foreground/80 mb-1">
+                Newton-metro (N·m)
+              </label>
+              <div className="relative flex items-center">
+                <input
+                  type="number"
+                  placeholder="0.0"
+                  value={torque.nm}
+                  onChange={(e) => handleTorqueChange("nm", e.target.value)}
+                  className={torqueInputClasses}
+                />
+                <button
+                  type="button"
+                  onClick={() => copyToClipboard(torque.nm, "torque-nm")}
+                  className="absolute right-2.5 p-1 text-muted-foreground hover:text-foreground transition-colors"
+                  title="Copiar"
+                >
+                  {copiedField === "torque-nm" ? (
+                    <Check className="w-4 h-4 text-emerald-400" />
+                  ) : (
+                    <Copy className="w-4 h-4" />
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {/* Libras-pie */}
+            <div>
+              <label className="block text-[10px] font-bold uppercase tracking-wider text-muted-foreground/80 mb-1">
+                Libras-pie (lb·ft)
+              </label>
+              <div className="relative flex items-center">
+                <input
+                  type="number"
+                  placeholder="0.0"
+                  value={torque.lbft}
+                  onChange={(e) => handleTorqueChange("lbft", e.target.value)}
+                  className={torqueInputClasses}
+                />
+                <button
+                  type="button"
+                  onClick={() => copyToClipboard(torque.lbft, "torque-lbft")}
+                  className="absolute right-2.5 p-1 text-muted-foreground hover:text-foreground transition-colors"
+                  title="Copiar"
+                >
+                  {copiedField === "torque-lbft" ? (
+                    <Check className="w-4 h-4 text-emerald-400" />
+                  ) : (
+                    <Copy className="w-4 h-4" />
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {/* Kilogramos-metro */}
+            <div>
+              <label className="block text-[10px] font-bold uppercase tracking-wider text-muted-foreground/80 mb-1">
+                Kilogramo-metro (kg·m)
+              </label>
+              <div className="relative flex items-center">
+                <input
+                  type="number"
+                  placeholder="0.0"
+                  value={torque.kgm}
+                  onChange={(e) => handleTorqueChange("kgm", e.target.value)}
+                  className={torqueInputClasses}
+                />
+                <button
+                  type="button"
+                  onClick={() => copyToClipboard(torque.kgm, "torque-kgm")}
+                  className="absolute right-2.5 p-1 text-muted-foreground hover:text-foreground transition-colors"
+                  title="Copiar"
+                >
+                  {copiedField === "torque-kgm" ? (
+                    <Check className="w-4 h-4 text-emerald-400" />
+                  ) : (
+                    <Copy className="w-4 h-4" />
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Pressure Card */}
+        <div className="rounded-xl border border-blue-500/20 bg-card/40 p-5 backdrop-blur-sm space-y-4 shadow-lg shadow-blue-500/5">
+          <div className="flex justify-between items-center border-b border-border/50 pb-3">
+            <h2 className="text-sm font-black uppercase tracking-wider flex items-center gap-2 text-blue-400">
+              <ArrowRightLeft className="w-4 h-4 text-blue-400" />
+              Presión
+            </h2>
+            <button
+              type="button"
+              onClick={() => handleClearSection("pressure")}
+              className="text-[10px] uppercase font-bold text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Limpiar
+            </button>
+          </div>
+
+          <div className="space-y-3">
+            {/* PSI */}
+            <div>
+              <label className="block text-[10px] font-bold uppercase tracking-wider text-muted-foreground/80 mb-1">
+                Libras por pulgada cuadrada (PSI)
+              </label>
+              <div className="relative flex items-center">
+                <input
+                  type="number"
+                  placeholder="0.0"
+                  value={pressure.psi}
+                  onChange={(e) => handlePressureChange("psi", e.target.value)}
+                  className={pressureInputClasses}
+                />
+                <button
+                  type="button"
+                  onClick={() => copyToClipboard(pressure.psi, "pressure-psi")}
+                  className="absolute right-2.5 p-1 text-muted-foreground hover:text-foreground transition-colors"
+                  title="Copiar"
+                >
+                  {copiedField === "pressure-psi" ? (
+                    <Check className="w-4 h-4 text-emerald-400" />
+                  ) : (
+                    <Copy className="w-4 h-4" />
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {/* Bar */}
+            <div>
+              <label className="block text-[10px] font-bold uppercase tracking-wider text-muted-foreground/80 mb-1">
+                Bar (bar)
+              </label>
+              <div className="relative flex items-center">
+                <input
+                  type="number"
+                  placeholder="0.0"
+                  value={pressure.bar}
+                  onChange={(e) => handlePressureChange("bar", e.target.value)}
+                  className={pressureInputClasses}
+                />
+                <button
+                  type="button"
+                  onClick={() => copyToClipboard(pressure.bar, "pressure-bar")}
+                  className="absolute right-2.5 p-1 text-muted-foreground hover:text-foreground transition-colors"
+                  title="Copiar"
+                >
+                  {copiedField === "pressure-bar" ? (
+                    <Check className="w-4 h-4 text-emerald-400" />
+                  ) : (
+                    <Copy className="w-4 h-4" />
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {/* Kilopascales */}
+            <div>
+              <label className="block text-[10px] font-bold uppercase tracking-wider text-muted-foreground/80 mb-1">
+                Kilopascal (kPa)
+              </label>
+              <div className="relative flex items-center">
+                <input
+                  type="number"
+                  placeholder="0.0"
+                  value={pressure.kpa}
+                  onChange={(e) => handlePressureChange("kpa", e.target.value)}
+                  className={pressureInputClasses}
+                />
+                <button
+                  type="button"
+                  onClick={() => copyToClipboard(pressure.kpa, "pressure-kpa")}
+                  className="absolute right-2.5 p-1 text-muted-foreground hover:text-foreground transition-colors"
+                  title="Copiar"
+                >
+                  {copiedField === "pressure-kpa" ? (
+                    <Check className="w-4 h-4 text-emerald-400" />
+                  ) : (
+                    <Copy className="w-4 h-4" />
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Speed Card */}
+        <div className="rounded-xl border border-emerald-500/20 bg-card/40 p-5 backdrop-blur-sm space-y-4 shadow-lg shadow-emerald-500/5">
+          <div className="flex justify-between items-center border-b border-border/50 pb-3">
+            <h2 className="text-sm font-black uppercase tracking-wider flex items-center gap-2 text-emerald-400">
+              <Gauge className="w-4 h-4 text-emerald-400" />
+              Velocidad
+            </h2>
+            <button
+              type="button"
+              onClick={() => handleClearSection("speed")}
+              className="text-[10px] uppercase font-bold text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Limpiar
+            </button>
+          </div>
+
+          <div className="space-y-3">
+            {/* km/h */}
+            <div>
+              <label className="block text-[10px] font-bold uppercase tracking-wider text-muted-foreground/80 mb-1">
+                Kilómetros por hora (km/h)
+              </label>
+              <div className="relative flex items-center">
+                <input
+                  type="number"
+                  placeholder="0.0"
+                  value={speed.kmh}
+                  onChange={(e) => handleSpeedChange("kmh", e.target.value)}
+                  className={speedInputClasses}
+                />
+                <button
+                  type="button"
+                  onClick={() => copyToClipboard(speed.kmh, "speed-kmh")}
+                  className="absolute right-2.5 p-1 text-muted-foreground hover:text-foreground transition-colors"
+                  title="Copiar"
+                >
+                  {copiedField === "speed-kmh" ? (
+                    <Check className="w-4 h-4 text-emerald-400" />
+                  ) : (
+                    <Copy className="w-4 h-4" />
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {/* mph */}
+            <div>
+              <label className="block text-[10px] font-bold uppercase tracking-wider text-muted-foreground/80 mb-1">
+                Millas por hora (mph)
+              </label>
+              <div className="relative flex items-center">
+                <input
+                  type="number"
+                  placeholder="0.0"
+                  value={speed.mph}
+                  onChange={(e) => handleSpeedChange("mph", e.target.value)}
+                  className={speedInputClasses}
+                />
+                <button
+                  type="button"
+                  onClick={() => copyToClipboard(speed.mph, "speed-mph")}
+                  className="absolute right-2.5 p-1 text-muted-foreground hover:text-foreground transition-colors"
+                  title="Copiar"
+                >
+                  {copiedField === "speed-mph" ? (
+                    <Check className="w-4 h-4 text-emerald-400" />
+                  ) : (
+                    <Copy className="w-4 h-4" />
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Power Card */}
+        <div className="rounded-xl border border-amber-500/20 bg-card/40 p-5 backdrop-blur-sm space-y-4 shadow-lg shadow-amber-500/5">
+          <div className="flex justify-between items-center border-b border-border/50 pb-3">
+            <h2 className="text-sm font-black uppercase tracking-wider flex items-center gap-2 text-amber-400">
+              <Sparkles className="w-4 h-4 text-amber-400" />
+              Potencia
+            </h2>
+            <button
+              type="button"
+              onClick={() => handleClearSection("power")}
+              className="text-[10px] uppercase font-bold text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Limpiar
+            </button>
+          </div>
+
+          <div className="space-y-3">
+            {/* Caballos de fuerza (HP) */}
+            <div>
+              <label className="block text-[10px] font-bold uppercase tracking-wider text-muted-foreground/80 mb-1">
+                Caballos de Fuerza (HP)
+              </label>
+              <div className="relative flex items-center">
+                <input
+                  type="number"
+                  placeholder="0.0"
+                  value={power.hp}
+                  onChange={(e) => handlePowerChange("hp", e.target.value)}
+                  className={powerInputClasses}
+                />
+                <button
+                  type="button"
+                  onClick={() => copyToClipboard(power.hp, "power-hp")}
+                  className="absolute right-2.5 p-1 text-muted-foreground hover:text-foreground transition-colors"
+                  title="Copiar"
+                >
+                  {copiedField === "power-hp" ? (
+                    <Check className="w-4 h-4 text-emerald-400" />
+                  ) : (
+                    <Copy className="w-4 h-4" />
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {/* Caballos de vapor (CV) */}
+            <div>
+              <label className="block text-[10px] font-bold uppercase tracking-wider text-muted-foreground/80 mb-1">
+                Caballos de Vapor (CV)
+              </label>
+              <div className="relative flex items-center">
+                <input
+                  type="number"
+                  placeholder="0.0"
+                  value={power.cv}
+                  onChange={(e) => handlePowerChange("cv", e.target.value)}
+                  className={powerInputClasses}
+                />
+                <button
+                  type="button"
+                  onClick={() => copyToClipboard(power.cv, "power-cv")}
+                  className="absolute right-2.5 p-1 text-muted-foreground hover:text-foreground transition-colors"
+                  title="Copiar"
+                >
+                  {copiedField === "power-cv" ? (
+                    <Check className="w-4 h-4 text-emerald-400" />
+                  ) : (
+                    <Copy className="w-4 h-4" />
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {/* Kilovatios (kW) */}
+            <div>
+              <label className="block text-[10px] font-bold uppercase tracking-wider text-muted-foreground/80 mb-1">
+                Kilovatios (kW)
+              </label>
+              <div className="relative flex items-center">
+                <input
+                  type="number"
+                  placeholder="0.0"
+                  value={power.kw}
+                  onChange={(e) => handlePowerChange("kw", e.target.value)}
+                  className={powerInputClasses}
+                />
+                <button
+                  type="button"
+                  onClick={() => copyToClipboard(power.kw, "power-kw")}
+                  className="absolute right-2.5 p-1 text-muted-foreground hover:text-foreground transition-colors"
+                  title="Copiar"
+                >
+                  {copiedField === "power-kw" ? (
+                    <Check className="w-4 h-4 text-emerald-400" />
+                  ) : (
+                    <Copy className="w-4 h-4" />
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  )}
+</div>
+)
 }
