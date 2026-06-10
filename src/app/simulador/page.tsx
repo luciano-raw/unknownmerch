@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Sparkles, RotateCcw, HelpCircle, Info, Gauge, Eye, LayoutGrid, Wrench, Copy, Check, ArrowRightLeft } from "lucide-react"
 
@@ -18,6 +18,17 @@ interface TireSpec {
 export default function TireSimulatorPage() {
   // Active Tab state and tools definition
   const [activeTab, setActiveTab] = useState<"tire-comparator" | "unit-converter" | "offset" | "weight-power" | "displacement">("tire-comparator")
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search)
+      const tab = params.get("tab")
+      const validTabs = ["tire-comparator", "unit-converter", "offset", "weight-power", "displacement"]
+      if (tab && validTabs.includes(tab)) {
+        setActiveTab(tab as any)
+      }
+    }
+  }, [])
 
   const tabs = [
     { id: "tire-comparator", label: "Comparador Neumáticos", icon: "🛞", active: true },

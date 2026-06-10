@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma"
 import { FeaturedProducts } from "@/components/featured-products"
 import { SearchBar } from "@/components/search-bar"
 import { getStoreSettings } from "@/actions/settings"
-import { Car, Gauge, MapPin } from "lucide-react"
+import { Car, Gauge, MapPin, Wrench, Sparkles, LayoutGrid, Info } from "lucide-react"
 
 export const dynamic = "force-dynamic"
 
@@ -65,7 +65,7 @@ export default async function Home() {
                   href="/simulador"
                   className="inline-flex h-12 items-center justify-center rounded-none border-2 border-primary/50 bg-primary/5 hover:bg-primary/15 px-6 md:px-8 text-xs md:text-sm font-extrabold text-primary transition-all hover:scale-105 active:scale-95 uppercase tracking-widest gap-2 shadow-[0_0_15px_rgba(245,158,11,0.05)]"
                 >
-                  <Gauge className="w-4 h-4" /> <span>Comparador <span className="hidden sm:inline">Neumáticos</span></span>
+                  <Wrench className="w-4 h-4" /> <span>Herramientas <span className="hidden sm:inline">Técnicas</span></span>
                 </Link>
                 <Link
                   href="/mapa"
@@ -215,52 +215,168 @@ export default async function Home() {
           </div>
         </section>
 
-        {/* Comparador / Fitment Teaser Section */}
+        {/* Garage Toolbox Showcase Section */}
         <section className="container mx-auto px-4 py-16 border-t border-border">
-          <div className="max-w-5xl mx-auto bg-card/25 border border-border rounded-3xl p-6 md:p-10 backdrop-blur-sm grid md:grid-cols-2 gap-8 items-center shadow-lg relative overflow-hidden">
-            {/* Left side: SVG Graphic (Swapped for alternating layout on desktop) */}
-            <div className="order-2 md:order-1 h-64 bg-black/30 rounded-2xl border border-border/60 flex items-center justify-center p-4 shadow-inner relative overflow-hidden group">
-              <div className="absolute inset-0 bg-[linear-gradient(to_right,#141416_1px,transparent_1px),linear-gradient(to_bottom,#141416_1px,transparent_1px)] bg-[size:16px_16px] opacity-20" />
-              <svg className="w-full h-full text-primary opacity-80" viewBox="0 0 400 250" fill="none" stroke="currentColor" strokeWidth="1.5">
-                <circle cx="200" cy="125" r="70" stroke="#27272a" strokeWidth="14" />
-                <circle cx="200" cy="125" r="77" stroke="currentColor" strokeWidth="1" strokeDasharray="3,3" opacity="0.5" />
-                <circle cx="200" cy="125" r="56" stroke="#27272a" strokeWidth="3" />
-                <circle cx="200" cy="125" r="45" stroke="#3f3f46" strokeWidth="2.5" />
-                <line x1="200" y1="35" x2="200" y2="215" stroke="currentColor" strokeWidth="1" strokeDasharray="2,2" opacity="0.6" />
-                <path d="M 200,35 L 196,43 L 204,43 Z" fill="currentColor" />
-                <path d="M 200,215 L 196,207 L 204,207 Z" fill="currentColor" />
-                <text x="215" y="130" fill="currentColor" fontSize="11" fontWeight="bold" className="font-mono">DIÁMETRO</text>
-                <line x1="120" y1="125" x2="280" y2="125" stroke="#27272a" strokeWidth="1" strokeDasharray="2,2" opacity="0.4" />
-                <line x1="70" y1="125" x2="200" y2="125" stroke="currentColor" strokeWidth="1" />
-                <path d="M 70,125 L 78,121 L 78,129 Z" fill="currentColor" />
-                <text x="90" y="115" fill="currentColor" fontSize="9" fontWeight="bold" className="font-mono">ANCHO</text>
-                <line x1="200" y1="125" x2="160" y2="95" stroke="#3f3f46" strokeWidth="2" />
-                <line x1="200" y1="125" x2="240" y2="95" stroke="#3f3f46" strokeWidth="2" />
-                <line x1="200" y1="125" x2="160" y2="155" stroke="#3f3f46" strokeWidth="2" />
-                <line x1="200" y1="125" x2="240" y2="155" stroke="#3f3f46" strokeWidth="2" />
-                <path d="M 270,125 C 270,86.3 238.7,55 200,55 C 161.3,55 130,86.3 130,125" stroke="currentColor" strokeWidth="1.5" strokeDasharray="6,6" opacity="0.4" />
-              </svg>
+          <div className="max-w-6xl mx-auto space-y-12">
+            <div className="flex flex-col items-center text-center uppercase tracking-tighter italic">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-primary/10 border border-primary/25 text-primary uppercase tracking-wider not-italic mb-4">
+                <Wrench className="w-3.5 h-3.5" /> Garage Toolbox
+              </span>
+              <h2 className="text-3xl font-bold sm:text-4xl md:text-5xl text-foreground mb-4">
+                Herramientas Técnicas
+              </h2>
+              <div className="w-16 h-1 bg-primary mb-6"></div>
+              <p className="text-sm font-mono tracking-widest text-muted-foreground max-w-2xl not-italic">
+                Utilidades de ingeniería automotriz para medir, comparar y optimizar tu proyecto.
+              </p>
             </div>
 
-            {/* Right side: Text content */}
-            <div className="order-1 md:order-2 space-y-6 text-left">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-primary/10 border border-primary/25 text-primary uppercase tracking-wider">
-                <Gauge className="w-3.5 h-3.5" /> Calculadora de Calce
-              </span>
-              <h2 className="text-3xl font-black uppercase tracking-tight italic text-foreground">
-                Comparador de Neumáticos
-              </h2>
-              <p className="text-muted-foreground text-sm leading-relaxed">
-                Visualiza el impacto de cambiar las medidas de tus neumáticos y llantas en escala matemática real. Analiza diferencias de perfil, diámetros, revoluciones por kilómetro y el impacto directo en la lectura de tu velocímetro antes de realizar cualquier modificación.
-              </p>
-              <div className="pt-2">
-                <Link 
-                  href="/simulador"
-                  className="inline-flex h-12 items-center justify-center rounded-none border border-border bg-card/60 backdrop-blur-sm hover:bg-secondary px-8 text-xs font-bold text-foreground transition-all hover:scale-105 active:scale-95 uppercase tracking-widest gap-2"
-                >
-                  <Gauge className="w-4 h-4" /> Probar Comparador
-                </Link>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {/* Card 1: Comparador Neumáticos */}
+              <div className="group rounded-2xl border border-border bg-card/15 p-6 space-y-4 hover:border-primary/40 transition-all duration-300 hover:shadow-lg hover:shadow-primary/5 flex flex-col justify-between">
+                <div className="space-y-3">
+                  <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/25 flex items-center justify-center text-primary group-hover:scale-110 transition-transform duration-300">
+                    <span className="text-lg">🛞</span>
+                  </div>
+                  <h3 className="text-base font-bold uppercase tracking-wider text-zinc-200">Comparador Neumáticos</h3>
+                  
+                  <div className="space-y-2">
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      <strong className="text-zinc-300 block mb-0.5">¿Para qué sirve?</strong>
+                      Visualiza en escala matemática real y gráfica la diferencia de diámetros, anchos y perfiles entre neumáticos.
+                    </p>
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      <strong className="text-zinc-300 block mb-0.5">¿Cómo se usa?</strong>
+                      Selecciona las medidas de fábrica y tus nuevas medidas alternativas. Obtendrás el desvío exacto del velocímetro y la compatibilidad física recomendada (límite del ±3%).
+                    </p>
+                  </div>
+                </div>
+                <div className="pt-4">
+                  <Link 
+                    href="/simulador?tab=tire-comparator" 
+                    className="w-full inline-flex h-9 items-center justify-center rounded-lg border border-border bg-card/60 backdrop-blur-sm hover:bg-secondary text-[11px] font-bold text-foreground transition-all uppercase tracking-wider gap-1.5"
+                  >
+                    Probar Comparador
+                  </Link>
+                </div>
               </div>
+
+              {/* Card 2: Convertidor Mecánico */}
+              <div className="group rounded-2xl border border-border bg-card/15 p-6 space-y-4 hover:border-primary/40 transition-all duration-300 hover:shadow-lg hover:shadow-primary/5 flex flex-col justify-between">
+                <div className="space-y-3">
+                  <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/25 flex items-center justify-center text-primary group-hover:scale-110 transition-transform duration-300">
+                    <Wrench className="w-5 h-5" />
+                  </div>
+                  <h3 className="text-base font-bold uppercase tracking-wider text-zinc-200">Convertidor Mecánico</h3>
+                  
+                  <div className="space-y-2">
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      <strong className="text-zinc-300 block mb-0.5">¿Para qué sirve?</strong>
+                      Realiza conversiones instantáneas de unidades esenciales en mecánica y puesta a punto en el taller.
+                    </p>
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      <strong className="text-zinc-300 block mb-0.5">¿Cómo se usa?</strong>
+                      Escribe el valor en la unidad que tengas disponible (Nm, Lb-ft, Psi, Bar, HP, kW, Mph o Km/h) y la herramienta convertirá instantáneamente al resto de sistemas de medida.
+                    </p>
+                  </div>
+                </div>
+                <div className="pt-4">
+                  <Link 
+                    href="/simulador?tab=unit-converter" 
+                    className="w-full inline-flex h-9 items-center justify-center rounded-lg border border-border bg-card/60 backdrop-blur-sm hover:bg-secondary text-[11px] font-bold text-foreground transition-all uppercase tracking-wider gap-1.5"
+                  >
+                    Probar Convertidor
+                  </Link>
+                </div>
+              </div>
+
+              {/* Card 3: Offset de Llantas */}
+              <div className="group rounded-2xl border border-border bg-card/15 p-6 space-y-4 hover:border-primary/40 transition-all duration-300 hover:shadow-lg hover:shadow-primary/5 flex flex-col justify-between">
+                <div className="space-y-3">
+                  <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/25 flex items-center justify-center text-primary group-hover:scale-110 transition-transform duration-300">
+                    <LayoutGrid className="w-5 h-5" />
+                  </div>
+                  <h3 className="text-base font-bold uppercase tracking-wider text-zinc-200">Offset Llantas (Fitment)</h3>
+                  
+                  <div className="space-y-2">
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      <strong className="text-zinc-300 block mb-0.5">¿Para qué sirve?</strong>
+                      Evalúa la holgura interior hacia la suspensión y la extensión exterior hacia la carrocería al cambiar llantas.
+                    </p>
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      <strong className="text-zinc-300 block mb-0.5">¿Cómo se usa?</strong>
+                      Ingresa el ancho (pulgadas) y el ET/Offset (mm) de la llanta actual y la nueva. El simulador SVG superpondrá ambos perfiles para guiarte en el calce perfecto.
+                    </p>
+                  </div>
+                </div>
+                <div className="pt-4">
+                  <Link 
+                    href="/simulador?tab=offset" 
+                    className="w-full inline-flex h-9 items-center justify-center rounded-lg border border-border bg-card/60 backdrop-blur-sm hover:bg-secondary text-[11px] font-bold text-foreground transition-all uppercase tracking-wider gap-1.5"
+                  >
+                    Simular Offset
+                  </Link>
+                </div>
+              </div>
+
+              {/* Card 4: Peso / Potencia */}
+              <div className="group rounded-2xl border border-border bg-card/15 p-6 space-y-4 hover:border-primary/40 transition-all duration-300 hover:shadow-lg hover:shadow-primary/5 flex flex-col justify-between">
+                <div className="space-y-3">
+                  <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/25 flex items-center justify-center text-primary group-hover:scale-110 transition-transform duration-300">
+                    <Sparkles className="w-5 h-5" />
+                  </div>
+                  <h3 className="text-base font-bold uppercase tracking-wider text-zinc-200">Peso / Potencia y Tiempos</h3>
+                  
+                  <div className="space-y-2">
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      <strong className="text-zinc-300 block mb-0.5">¿Para qué sirve?</strong>
+                      Calcula relaciones de aceleración física teóricas (0-100 km/h y 1/4 milla) basadas en el peso y potencia del auto.
+                    </p>
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      <strong className="text-zinc-300 block mb-0.5">¿Cómo se usa?</strong>
+                      Ingresa el peso en kg, la potencia en HP y selecciona la tracción (FWD, RWD, AWD). Compara el rendimiento de tu auto en la tabla de marcas de referencia del club.
+                    </p>
+                  </div>
+                </div>
+                <div className="pt-4">
+                  <Link 
+                    href="/simulador?tab=weight-power" 
+                    className="w-full inline-flex h-9 items-center justify-center rounded-lg border border-border bg-card/60 backdrop-blur-sm hover:bg-secondary text-[11px] font-bold text-foreground transition-all uppercase tracking-wider gap-1.5"
+                  >
+                    Estimar Prestaciones
+                  </Link>
+                </div>
+              </div>
+
+              {/* Card 5: Cilindrada */}
+              <div className="group md:col-span-2 lg:col-span-1 rounded-2xl border border-border bg-card/15 p-6 space-y-4 hover:border-primary/40 transition-all duration-300 hover:shadow-lg hover:shadow-primary/5 flex flex-col justify-between">
+                <div className="space-y-3">
+                  <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/25 flex items-center justify-center text-primary group-hover:scale-110 transition-transform duration-300">
+                    <span className="text-lg">⚙️</span>
+                  </div>
+                  <h3 className="text-base font-bold uppercase tracking-wider text-zinc-200">Cilindrada y Compresión</h3>
+                  
+                  <div className="space-y-2">
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      <strong className="text-zinc-300 block mb-0.5">¿Para qué sirve?</strong>
+                      Calcula el volumen exacto de desplazamiento del motor y estima su relación de compresión dinámica.
+                    </p>
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      <strong className="text-zinc-300 block mb-0.5">¿Cómo se usa?</strong>
+                      Introduce el bore (diámetro), stroke (carrera) y número de cilindros. De forma opcional, añade el volumen de cámara de la culata y junta para estimar la compresión.
+                    </p>
+                  </div>
+                </div>
+                <div className="pt-4">
+                  <Link 
+                    href="/simulador?tab=displacement" 
+                    className="w-full inline-flex h-9 items-center justify-center rounded-lg border border-border bg-card/60 backdrop-blur-sm hover:bg-secondary text-[11px] font-bold text-foreground transition-all uppercase tracking-wider gap-1.5"
+                  >
+                    Cubicar Motor
+                  </Link>
+                </div>
+              </div>
+
             </div>
           </div>
         </section>

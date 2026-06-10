@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { Menu, Car, Gauge, Package, Users, MapPin } from "lucide-react"
+import { Menu, Car, Wrench, Package, Users, MapPin } from "lucide-react"
 import { ThemeToggle } from "./theme-toggle"
 import { CartIcon } from "./cart-icon"
 import { MobileMenu } from "./mobile-menu"
@@ -54,7 +54,7 @@ export async function Header() {
               href="/simulador"
               className="transition-all hover:text-primary flex items-center gap-1.5 bg-primary/10 border border-primary/20 px-3 py-1.5 rounded-lg text-primary hover:bg-primary/20 font-bold"
             >
-              <Gauge className="w-3.5 h-3.5" /> Comparador
+              <Wrench className="w-3.5 h-3.5" /> Herramientas
             </Link>
             <Link
               href="/mapa"
@@ -98,7 +98,7 @@ export async function Header() {
                 <Car className="w-5 h-5 text-primary" /> Garage
               </Link>
               <Link href="/simulador" className="text-xl font-black uppercase italic hover:text-primary transition-colors flex items-center gap-2">
-                <Gauge className="w-5 h-5 text-primary" /> Comparador Neumáticos
+                <Wrench className="w-5 h-5 text-primary" /> Herramientas Técnicas
               </Link>
               <Link href="/mapa" className="text-xl font-black uppercase italic hover:text-primary transition-colors flex items-center gap-2">
                 <MapPin className="w-5 h-5 text-primary" /> Mapa
