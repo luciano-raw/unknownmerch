@@ -13,7 +13,7 @@ export const metadata: Metadata = {
     "streetwear tuerca chile"
   ],
   alternates: {
-    canonical: "https://unknown-club.store/nosotros",
+    canonical: "https://unknownclub.store/nosotros",
   },
 }
 

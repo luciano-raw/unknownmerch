@@ -31,7 +31,7 @@ export default async function Home() {
     }
   })
   
-  const baseUrl = 'https://unknown-club.store'
+  const baseUrl = 'https://unknownclub.store'
   const settings = await getStoreSettings()
 
   return (

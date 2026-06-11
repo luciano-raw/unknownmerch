@@ -7,6 +7,6 @@ export default function robots(): MetadataRoute.Robots {
       allow: '/',
       disallow: '/admin/',
     },
-    sitemap: 'https://unknown-club.store/sitemap.xml',
+    sitemap: 'https://unknownclub.store/sitemap.xml',
   }
 }

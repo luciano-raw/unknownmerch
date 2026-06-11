@@ -28,7 +28,7 @@ export const viewport: Viewport = {
 }
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://unknown-club.store"),
+  metadataBase: new URL("https://unknownclub.store"),
   title: {
     default: "Unknown Club | Tienda de Merch Minimalista para Autos & Tuning",
     template: "%s | Unknown Club"
@@ -61,7 +61,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Unknown Club | Minimalist Merch Store",
     description: "Exclusive minimalist merch from Unknown Club. Pure black and white aesthetics.",
-    url: "https://unknown-club.store",
+    url: "https://unknownclub.store",
     siteName: "Unknown Club",
     locale: "es_CL",
     type: "website",
@@ -83,7 +83,7 @@ export const metadata: Metadata = {
     },
   },
   alternates: {
-    canonical: "https://unknown-club.store",
+    canonical: "https://unknownclub.store",
   },
 };
 

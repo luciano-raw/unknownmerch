@@ -30,7 +30,7 @@ export async function generateMetadata({
       images: product.images.length > 0 ? [product.images[0]] : [],
     },
     alternates: {
-      canonical: `https://unknown-club.store/product/${id}`,
+      canonical: `https://unknownclub.store/product/${id}`,
     },
   }
 }

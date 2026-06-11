@@ -16,7 +16,7 @@ export const metadata: Metadata = {
     "offset llantas"
   ],
   alternates: {
-    canonical: "https://unknown-club.store/simulador",
+    canonical: "https://unknownclub.store/simulador",
   },
 }
 

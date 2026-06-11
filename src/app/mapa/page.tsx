@@ -15,7 +15,7 @@ export const metadata: Metadata = {
     "comunidad tuning chile"
   ],
   alternates: {
-    canonical: "https://unknown-club.store/mapa",
+    canonical: "https://unknownclub.store/mapa",
   },
 }
 

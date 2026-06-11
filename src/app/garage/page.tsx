@@ -16,7 +16,7 @@ export const metadata: Metadata = {
     "stance club garage"
   ],
   alternates: {
-    canonical: "https://unknown-club.store/garage",
+    canonical: "https://unknownclub.store/garage",
   },
 }
 
