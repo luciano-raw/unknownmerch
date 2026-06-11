@@ -3,7 +3,7 @@ import { Menu, Car, Wrench, Package, Users, MapPin } from "lucide-react"
 import { ThemeToggle } from "./theme-toggle"
 import { CartIcon } from "./cart-icon"
 import { MobileMenu } from "./mobile-menu"
-import { SignInButton, UserButton, SignOutButton } from "@clerk/nextjs"
+import { DesktopAuth, MobileAuth } from "./header-auth"
 import { auth, currentUser } from "@clerk/nextjs/server"
 import { getStoreSettings } from "@/actions/settings"
 
@@ -71,18 +71,7 @@ export async function Header() {
                 Admin
               </Link>
             )}
-            {!userId ? (
-              <SignInButton mode="modal">
-                <button
-                  translate="no"
-                  className="text-xs font-mono hover:text-primary transition-colors cursor-pointer uppercase tracking-widest bg-transparent border-none p-0 outline-none text-left"
-                >
-                  Login
-                </button>
-              </SignInButton>
-            ) : (
-              <UserButton />
-            )}
+            <DesktopAuth userId={userId} />
           </div>
           
           <Link href="/garage" className="md:hidden p-2 text-foreground hover:text-primary transition-colors flex items-center justify-center" title="Nuestro Garage">
@@ -115,30 +104,7 @@ export async function Header() {
                   Panel Administrador
                 </Link>
               )}
-              {!userId ? (
-                <div className="mt-2 flex">
-                  <SignInButton mode="modal">
-                    <button
-                      translate="no"
-                      className="text-lg font-medium text-primary cursor-pointer bg-transparent border-none p-0 outline-none text-left font-semibold"
-                    >
-                      Iniciar Sesión o Registrarse
-                    </button>
-                  </SignInButton>
-                </div>
-              ) : (
-                <div className="mt-2 flex flex-col gap-5 border-t pt-4">
-                  <div className="flex items-center gap-3">
-                    <UserButton />
-                    <span className="text-base text-foreground font-bold">Mi Cuenta</span>
-                  </div>
-                  <SignOutButton>
-                    <button className="text-left text-lg font-medium text-destructive hover:text-red-500 transition-colors">
-                      Cerrar Sesión
-                    </button>
-                  </SignOutButton>
-                </div>
-              )}
+              <MobileAuth userId={userId} />
             </nav>
           </MobileMenu>
         </div>
