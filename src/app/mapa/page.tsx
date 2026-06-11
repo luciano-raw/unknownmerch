@@ -1,6 +1,23 @@
 import { getMapProfiles } from "@/actions/map"
 import { getStoreSettings } from "@/actions/settings"
 import PublicMapWrapper from "@/components/public-map-wrapper"
+import type { Metadata } from "next"
+
+export const metadata: Metadata = {
+  title: "Mapa de Encuentros y Miembros Stance",
+  description: "Mapa interactivo con las ubicaciones de los miembros y autos modificados del club. Descubre eventos, juntas y puntos de encuentro tuning en Chile.",
+  keywords: [
+    "mapa tuning chile",
+    "juntas de autos modificados",
+    "stance club mapa",
+    "puntos de encuentro autos tuning",
+    "stance chile mapa",
+    "comunidad tuning chile"
+  ],
+  alternates: {
+    canonical: "https://unknown-club.store/mapa",
+  },
+}
 
 export const revalidate = 0 // Ensure we get fresh map data
 export const dynamic = "force-dynamic"

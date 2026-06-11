@@ -1,4 +1,21 @@
 import { Truck, MapPin, Sparkles, Heart } from "lucide-react"
+import type { Metadata } from "next"
+
+export const metadata: Metadata = {
+  title: "Nosotros, Filosofía y Envíos a todo Chile",
+  description: "Conoce la esencia, historia y valores detrás de Unknown Club. Realizamos envíos de ropa y accesorios tuning a todo Chile, con bases en Talca y Linares.",
+  keywords: [
+    "sobre unknown club",
+    "envios tuning chile",
+    "tienda stance talca linares",
+    "merch autos chile",
+    "stance club chile",
+    "streetwear tuerca chile"
+  ],
+  alternates: {
+    canonical: "https://unknown-club.store/nosotros",
+  },
+}
 
 export default function NosotrosPage() {
   return (

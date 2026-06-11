@@ -72,14 +72,21 @@ export async function Header() {
               </Link>
             )}
             {!userId ? (
-              <SignInButton mode="modal"><span className="text-xs font-mono hover:text-primary transition-colors cursor-pointer uppercase tracking-widest">Login</span></SignInButton>
+              <SignInButton mode="modal">
+                <button
+                  translate="no"
+                  className="text-xs font-mono hover:text-primary transition-colors cursor-pointer uppercase tracking-widest bg-transparent border-none p-0 outline-none text-left"
+                >
+                  Login
+                </button>
+              </SignInButton>
             ) : (
               <UserButton />
             )}
           </div>
           
           <Link href="/garage" className="md:hidden p-2 text-foreground hover:text-primary transition-colors flex items-center justify-center" title="Nuestro Garage">
-            <Car className="w-5 h-5" />
+             <Car className="w-5 h-5" />
           </Link>
           
           <CartIcon />
@@ -110,7 +117,14 @@ export async function Header() {
               )}
               {!userId ? (
                 <div className="mt-2 flex">
-                  <SignInButton mode="modal"><span className="text-lg font-medium text-primary cursor-pointer">Iniciar Sesión o Registrarse</span></SignInButton>
+                  <SignInButton mode="modal">
+                    <button
+                      translate="no"
+                      className="text-lg font-medium text-primary cursor-pointer bg-transparent border-none p-0 outline-none text-left font-semibold"
+                    >
+                      Iniciar Sesión o Registrarse
+                    </button>
+                  </SignInButton>
                 </div>
               ) : (
                 <div className="mt-2 flex flex-col gap-5 border-t pt-4">

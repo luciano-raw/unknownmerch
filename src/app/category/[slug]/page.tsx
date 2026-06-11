@@ -1,6 +1,45 @@
 import Link from "next/link"
 import { ProductCard, ProductType } from "@/components/product-card"
 import { prisma } from "@/lib/prisma"
+import type { Metadata } from "next"
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>
+}): Promise<Metadata> {
+  const { slug } = await params
+  let title = "Categoría"
+  let description = "Colección oficial de productos minimalistas de Unknown Club."
+  let keywords = ["unknown club", "stance", "tuning"]
+
+  if (slug === "all") {
+    title = "Colección Completa de Ropa y Accesorios Tuning"
+    description = "Descubre nuestra colección completa de streetwear, stickers, llaveros y accesorios para vehículos con estética minimalista de Unknown Club."
+    keywords = ["ropa tuning", "accesorios autos tuning", "streetwear stance", "stickers autos chile"]
+  } else if (slug === "stickers") {
+    title = "Stickers & Banners Tuning para Autos"
+    description = "Stickers premium resistentes al agua y a la intemperie para personalizar tu auto stance o tuning. Diseños exclusivos de Unknown Club."
+    keywords = ["stickers tuning", "stickers autos", "banners para parabrisas", "calcomanias tuning"]
+  } else if (slug === "apparel") {
+    title = "Streetwear y Ropa Tuning Exclusiva"
+    description = "Poleras, polerones y streetwear de alta calidad con diseños minimalistas para amantes de los autos y la cultura tuning / stance."
+    keywords = ["ropa tuning", "poleras de autos", "polerones tuning", "streetwear tuerca chile"]
+  } else if (slug === "accessories") {
+    title = "Accesorios para Autos y Decoración Tuning"
+    description = "Llaveros, pomos de cambio, aromatizantes y accesorios de personalización con estética minimalista para tu vehículo."
+    keywords = ["accesorios tuning chile", "llaveros de autos", "pomos de cambio stance", "aromatizantes autos"]
+  }
+
+  return {
+    title,
+    description,
+    keywords,
+    alternates: {
+      canonical: `https://unknown-club.store/category/${slug}`,
+    },
+  }
+}
 
 export default async function CategoryPage({
   params,

@@ -30,11 +30,26 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   metadataBase: new URL("https://unknown-club.store"),
   title: {
-    default: "Unknown Club | Minimalist Merch Store",
+    default: "Unknown Club | Tienda de Merch Minimalista para Autos & Tuning",
     template: "%s | Unknown Club"
   },
-  description: "Exclusive minimalist merch from Unknown Club. Pure black and white aesthetics for car enthusiasts.",
-  keywords: ["minimalist", "merch", "unknown club", "car club", "apparel chile"],
+  description: "Colección exclusiva de ropa y accesorios para amantes del tuning y stance. Poleras, polerones, stickers, llaveros y herramientas de cálculo de suspensión, offset y llantas en Chile.",
+  keywords: [
+    "unknown club",
+    "stance chile",
+    "accesorios autos tuning",
+    "ropa tuning",
+    "streetwear tuerca",
+    "simulador de llantas",
+    "calculadora de offset",
+    "fitment chile",
+    "stickers tuning",
+    "talca",
+    "linares",
+    "tienda de accesorios stance",
+    "accesorios para vehiculos",
+    "stance"
+  ],
   authors: [{ name: "Unknown Club" }],
   creator: "Unknown Club",
   publisher: "Unknown Club",
