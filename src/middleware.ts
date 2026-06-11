@@ -4,16 +4,6 @@ import { NextResponse } from "next/server";
 const isProtectedRoute = createRouteMatcher(["/admin(.*)"]);
 
 export default clerkMiddleware(async (auth, req) => {
-  const hostname = req.headers.get("host") || "";
-
-  // Redirección canónica de www a sin-www
-  if (hostname.startsWith("www.unknownclub.store")) {
-    const url = req.nextUrl.clone();
-    url.host = "unknownclub.store";
-    url.protocol = "https";
-    return NextResponse.redirect(url, 301);
-  }
-
   if (isProtectedRoute(req)) {
       await auth.protect();
   }

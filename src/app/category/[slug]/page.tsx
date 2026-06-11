@@ -36,7 +36,7 @@ export async function generateMetadata({
     description,
     keywords,
     alternates: {
-      canonical: `https://unknownclub.store/category/${slug}`,
+      canonical: `https://www.unknownclub.store/category/${slug}`,
     },
   }
 }
