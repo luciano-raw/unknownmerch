@@ -3,8 +3,27 @@
 import { useState, useEffect, useRef } from "react"
 import { createVehicle, updateVehicle } from "@/actions/vehicles"
 import { useRouter } from "next/navigation"
-import { Image as ImageIcon, Star, Upload, Loader2, Sparkles, X, CheckCircle2 } from "lucide-react"
+import { Image as ImageIcon, Star, Upload, Loader2, Sparkles, X, CheckCircle2, Target, RotateCcw } from "lucide-react"
 import { compressImageClientSide } from "@/lib/image"
+
+const parseImagePosition = (pos: string | null | undefined) => {
+  if (!pos) return { x: 50, y: 50 }
+  const trimmed = pos.trim().toLowerCase()
+  if (trimmed === "center") return { x: 50, y: 50 }
+  if (trimmed === "top") return { x: 50, y: 0 }
+  if (trimmed === "bottom") return { x: 50, y: 100 }
+  if (trimmed === "left") return { x: 0, y: 50 }
+  if (trimmed === "right") return { x: 100, y: 50 }
+  
+  const match = trimmed.match(/^(\d+(?:\.\d+)?)\s*%\s+(\d+(?:\.\d+)?)\s*%$/)
+  if (match) {
+    return {
+      x: Math.min(100, Math.max(0, Math.round(parseFloat(match[1])))),
+      y: Math.min(100, Math.max(0, Math.round(parseFloat(match[2]))))
+    }
+  }
+  return { x: 50, y: 50 }
+}
 
 export function VehicleForm({ initialData }: { initialData?: any }) {
   const [loading, setLoading] = useState(false)
@@ -30,7 +49,21 @@ export function VehicleForm({ initialData }: { initialData?: any }) {
   })
   
   const [coverIndex, setCoverIndex] = useState<number>(0)
-  const [imagePosition, setImagePosition] = useState<string>(initialData?.imagePosition || "center")
+  
+  // Parse focal coordinates from imagePosition
+  const [positionX, setPositionX] = useState<number>(() => {
+    const parsed = parseImagePosition(initialData?.imagePosition)
+    return parsed.x
+  })
+  const [positionY, setPositionY] = useState<number>(() => {
+    const parsed = parseImagePosition(initialData?.imagePosition)
+    return parsed.y
+  })
+  
+  const [isDraggingPos, setIsDraggingPos] = useState(false)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const isFirstRender = useRef(true)
+  
   const [showSuccess, setShowSuccess] = useState(false)
   
   const router = useRouter()
@@ -40,6 +73,50 @@ export function VehicleForm({ initialData }: { initialData?: any }) {
   useEffect(() => {
     imagesRef.current = images
   }, [images])
+
+  // Reset focal point when cover image changes, except on mount
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false
+      return
+    }
+    setPositionX(50)
+    setPositionY(50)
+  }, [coverIndex])
+
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!containerRef.current) return
+    e.preventDefault()
+    setIsDraggingPos(true)
+    e.currentTarget.setPointerCapture(e.pointerId)
+    updateCoordinates(e)
+  }
+
+  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!isDraggingPos) return
+    e.preventDefault()
+    updateCoordinates(e)
+  }
+
+  const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    setIsDraggingPos(false)
+    if (containerRef.current) {
+      try {
+        e.currentTarget.releasePointerCapture(e.pointerId)
+      } catch (err) {
+        // Ignore pointer release error
+      }
+    }
+  }
+
+  const updateCoordinates = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!containerRef.current) return
+    const rect = containerRef.current.getBoundingClientRect()
+    const x = ((e.clientX - rect.left) / rect.width) * 100
+    const y = ((e.clientY - rect.top) / rect.height) * 100
+    setPositionX(Math.max(0, Math.min(100, Math.round(x))))
+    setPositionY(Math.max(0, Math.min(100, Math.round(y))))
+  }
 
   // Clean memory leaks on unmount
   useEffect(() => {
@@ -348,23 +425,8 @@ export function VehicleForm({ initialData }: { initialData?: any }) {
               </div>
             </div>
 
-            <div>
-              <label className={labelClasses}>Alineación de Foto de Portada (En Galería)</label>
-              <select 
-                name="imagePosition" 
-                required 
-                disabled={loading}
-                className={selectClasses} 
-                value={imagePosition}
-                onChange={(e) => setImagePosition(e.target.value)}
-              >
-                <option value="center">Centro</option>
-                <option value="top">Arriba</option>
-                <option value="bottom">Abajo</option>
-                <option value="left">Izquierda</option>
-                <option value="right">Derecha</option>
-              </select>
-            </div>
+            {/* Hidden Input to store the visual crop coordinate */}
+            <input type="hidden" name="imagePosition" value={`${positionX}% ${positionY}%`} />
 
             <div>
               <label className={labelClasses}>Descripción / Spec List</label>
@@ -436,7 +498,7 @@ export function VehicleForm({ initialData }: { initialData?: any }) {
                         }`} 
                         onClick={() => !loading && setCoverIndex(index)}
                       >
-                        <div className="absolute inset-0 bg-cover" style={{ backgroundImage: `url(${img.url})`, backgroundPosition: index === coverIndex ? imagePosition : 'center' }} />
+                        <div className="absolute inset-0 bg-cover" style={{ backgroundImage: `url(${img.url})`, backgroundPosition: index === coverIndex ? `${positionX}% ${positionY}%` : 'center' }} />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60 group-hover:opacity-30 transition-opacity" />
                         
                         {/* Delete Button */}
@@ -459,6 +521,131 @@ export function VehicleForm({ initialData }: { initialData?: any }) {
                         </div>
                       </div>
                     ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Cover Focus Selector */}
+              {images.length > 0 && images[coverIndex] && (
+                <div className="space-y-4 border-t border-border/40 pt-5 mt-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className={labelClasses}>Enfoque de Foto de Portada</span>
+                      <p className="text-[11px] text-muted-foreground/80 normal-case mt-0.5">
+                        Haz clic o arrastra el visor amarillo sobre el auto.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPositionX(50)
+                        setPositionY(50)
+                      }}
+                      className="text-xs text-amber-400 hover:text-amber-300 font-bold transition-colors flex items-center gap-1.5"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" />
+                      Restaurar Centro
+                    </button>
+                  </div>
+
+                  <div className="grid sm:grid-cols-12 gap-5 items-start">
+                    {/* Interactive Selector Wrapper (Col 7) */}
+                    <div className="sm:col-span-7 flex flex-col">
+                      <div className="w-full text-[10px] text-muted-foreground/70 font-mono tracking-wider mb-1 flex justify-between">
+                        <span>1. ARRASTRA PARA ENFOCAR</span>
+                        <span>{positionX}% / {positionY}%</span>
+                      </div>
+                      <div 
+                        ref={containerRef}
+                        onPointerDown={handlePointerDown}
+                        onPointerMove={handlePointerMove}
+                        onPointerUp={handlePointerUp}
+                        onPointerCancel={handlePointerUp}
+                        className="relative w-full rounded-xl overflow-hidden border border-border bg-black/60 cursor-crosshair select-none touch-none flex items-center justify-center min-h-[160px] max-h-[260px] shadow-inner"
+                      >
+                        <img 
+                          src={images[coverIndex].url} 
+                          alt="Selector de enfoque"
+                          className="max-h-[260px] max-w-full w-auto h-auto select-none pointer-events-none object-contain"
+                        />
+                        
+                        {/* Rule of Thirds Grid Overlay */}
+                        <div className="absolute inset-0 grid grid-cols-3 grid-rows-3 pointer-events-none opacity-20">
+                          <div className="border-r border-b border-dashed border-white" />
+                          <div className="border-r border-b border-dashed border-white" />
+                          <div className="border-b border-dashed border-white" />
+                          <div className="border-r border-b border-dashed border-white" />
+                          <div className="border-r border-b border-dashed border-white" />
+                          <div className="border-b border-dashed border-white" />
+                          <div className="border-r border-dashed border-white" />
+                          <div className="border-r border-dashed border-white" />
+                          <div />
+                        </div>
+
+                        {/* Interactive target indicator */}
+                        <div 
+                          className="absolute w-8 h-8 -ml-4 -mt-4 rounded-full border-2 border-amber-400 bg-amber-400/20 shadow-[0_0_12px_rgba(251,191,36,0.85)] pointer-events-none flex items-center justify-center transition-[transform] duration-75 scale-110 active:scale-125"
+                          style={{ left: `${positionX}%`, top: `${positionY}%` }}
+                        >
+                          <Target className="w-4 h-4 text-amber-400 animate-pulse" />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Crop Live Preview Wrapper (Col 5) */}
+                    <div className="sm:col-span-5 space-y-1">
+                      <span className="text-[10px] text-muted-foreground/70 font-mono tracking-wider block">2. VISTA PREVIA (4:3)</span>
+                      <div className="relative aspect-[4/3] w-full rounded-xl overflow-hidden border border-amber-400/30 bg-secondary/15 shadow-md shadow-amber-400/5">
+                        <div 
+                          className="absolute inset-0 bg-cover bg-no-repeat transition-all duration-75" 
+                          style={{ 
+                            backgroundImage: `url(${images[coverIndex].url})`, 
+                            backgroundPosition: `${positionX}% ${positionY}%` 
+                          }} 
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
+                        <div className="absolute bottom-3 left-3 text-white pointer-events-none w-[90%]">
+                          <p className="text-[9px] font-bold text-amber-400 uppercase tracking-widest">Vista Previa</p>
+                          <p className="text-xs font-bold font-sans truncate tracking-tight uppercase">
+                            {initialData?.brand || "MARCA"} {initialData?.model || "MODELO"}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Range sliders for precise calibration */}
+                  <div className="space-y-3 pt-2">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <div className="flex justify-between items-center text-[10px] font-mono tracking-wider text-muted-foreground/80">
+                          <span>EJE HORIZONTAL (X)</span>
+                          <span className="font-bold text-foreground">{positionX}%</span>
+                        </div>
+                        <input 
+                          type="range" 
+                          min="0" 
+                          max="100" 
+                          value={positionX} 
+                          onChange={(e) => setPositionX(parseInt(e.target.value, 10))}
+                          className="w-full h-1.5 bg-secondary rounded-lg appearance-none cursor-pointer accent-amber-400 focus:outline-none" 
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <div className="flex justify-between items-center text-[10px] font-mono tracking-wider text-muted-foreground/80">
+                          <span>EJE VERTICAL (Y)</span>
+                          <span className="font-bold text-foreground">{positionY}%</span>
+                        </div>
+                        <input 
+                          type="range" 
+                          min="0" 
+                          max="100" 
+                          value={positionY} 
+                          onChange={(e) => setPositionY(parseInt(e.target.value, 10))}
+                          className="w-full h-1.5 bg-secondary rounded-lg appearance-none cursor-pointer accent-amber-400 focus:outline-none" 
+                        />
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}
