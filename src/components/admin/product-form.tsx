@@ -17,6 +17,21 @@ export function ProductForm({ initialData }: { initialData?: any }) {
   const [hoverIndex, setHoverIndex] = useState<number>(1)
   const [existingImages, setExistingImages] = useState<string[]>(initialData?.images || [])
   
+  // Parse initial imageFit configuration from specifications JSON
+  const [imageFit, setImageFit] = useState<string>(() => {
+    if (initialData?.specifications) {
+      try {
+        const specs = typeof initialData.specifications === 'string' 
+          ? JSON.parse(initialData.specifications) 
+          : initialData.specifications
+        return specs?.imageFit || "contain"
+      } catch (e) {
+        return "contain"
+      }
+    }
+    return "contain"
+  })
+  
   const [shippingType, setShippingType] = useState<string>("envio_y_retiro")
   const [shippingLocations, setShippingLocations] = useState<string[]>([])
   const [variantsText, setVariantsText] = useState<string>("")
@@ -126,6 +141,10 @@ export function ProductForm({ initialData }: { initialData?: any }) {
           specsObj = typeof initialData.specifications === 'string' ? JSON.parse(initialData.specifications) : initialData.specifications
         } catch(e) {}
       }
+      
+      // Save custom image fit configuration
+      specsObj.imageFit = imageFit
+      
       if (variantsText.trim()) {
         specsObj.variants = variantsText.split(",").map(v => v.trim()).filter(Boolean)
       } else {
@@ -307,19 +326,33 @@ export function ProductForm({ initialData }: { initialData?: any }) {
               </div>
             </div>
 
-            <div>
-              <label className={labelClasses}>Categoría</label>
-              <select 
-                name="category" 
-                required 
-                disabled={loading}
-                className={selectClasses} 
-                defaultValue={initialData?.category || "apparel"}
-              >
-                <option value="stickers">Stickers & Banners</option>
-                <option value="apparel">Apparel</option>
-                <option value="accessories">Car Accessories</option>
-              </select>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className={labelClasses}>Categoría</label>
+                <select 
+                  name="category" 
+                  required 
+                  disabled={loading}
+                  className={selectClasses} 
+                  defaultValue={initialData?.category || "apparel"}
+                >
+                  <option value="stickers">Stickers & Banners</option>
+                  <option value="apparel">Apparel</option>
+                  <option value="accessories">Car Accessories</option>
+                </select>
+              </div>
+              <div>
+                <label className={labelClasses}>Ajuste de Imagen (Galería)</label>
+                <select 
+                  value={imageFit} 
+                  onChange={(e) => setImageFit(e.target.value)}
+                  disabled={loading}
+                  className={selectClasses}
+                >
+                  <option value="contain">Ajustar (Ver foto completa)</option>
+                  <option value="cover">Llenar (Expandir/recortar)</option>
+                </select>
+              </div>
             </div>
 
             <div>
@@ -447,7 +480,7 @@ export function ProductForm({ initialData }: { initialData?: any }) {
                                     : "border-border opacity-70 hover:opacity-100"
                               }`}
                             >
-                              <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${url})` }} />
+                              <div className={`absolute inset-0 bg-center bg-no-repeat ${imageFit === "cover" ? "bg-cover" : "bg-contain bg-zinc-900/60"}`} style={{ backgroundImage: `url(${url})` }} />
                               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60 group-hover:opacity-30 transition-opacity" />
                               
                               <div className="absolute top-1.5 right-1.5 flex gap-1 z-20">
@@ -508,7 +541,7 @@ export function ProductForm({ initialData }: { initialData?: any }) {
                                     : "border-border opacity-70 hover:opacity-100"
                               }`}
                             >
-                              <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${url})` }} />
+                              <div className={`absolute inset-0 bg-center bg-no-repeat ${imageFit === "cover" ? "bg-cover" : "bg-contain bg-zinc-900/60"}`} style={{ backgroundImage: `url(${url})` }} />
                               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60 group-hover:opacity-30 transition-opacity" />
                               
                               <div className="absolute top-1.5 right-1.5 flex gap-1 z-20">

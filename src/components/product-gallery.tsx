@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 
-export function ProductGallery({ images }: { images: string[] }) {
+export function ProductGallery({ images, imageFit = "contain" }: { images: string[], imageFit?: string }) {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [position, setPosition] = useState({ x: 50, y: 50 })
   const [isZooming, setIsZooming] = useState(false)
@@ -39,7 +39,9 @@ export function ProductGallery({ images }: { images: string[] }) {
             }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="absolute inset-0 bg-center bg-contain bg-no-repeat transition-transform ease-out will-change-transform"
+            className={`absolute inset-0 bg-center bg-no-repeat transition-transform ease-out will-change-transform ${
+              imageFit === "cover" ? "bg-cover" : "bg-contain"
+            }`}
             style={{ 
               backgroundImage: `url(${safeImages[currentIndex]})`,
               transformOrigin: isZooming ? `${position.x}% ${position.y}%` : "center center"
@@ -66,7 +68,9 @@ export function ProductGallery({ images }: { images: string[] }) {
               }`}
             >
               <div
-                className="absolute inset-0 bg-center bg-contain bg-no-repeat"
+                className={`absolute inset-0 bg-center bg-no-repeat ${
+                  imageFit === "cover" ? "bg-cover" : "bg-contain"
+                }`}
                 style={{ backgroundImage: `url(${image})` }}
               />
             </button>

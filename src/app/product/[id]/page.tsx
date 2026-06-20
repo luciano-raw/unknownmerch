@@ -58,7 +58,10 @@ export default async function ProductDetailPage({
             
             {/* Gallery Intersect */}
             <div className="w-full">
-              <ProductGallery images={product.images} />
+              <ProductGallery 
+                images={product.images} 
+                imageFit={(product.specifications as any)?.imageFit || "contain"} 
+              />
             </div>
 
             {/* Product Info */}
