@@ -3,7 +3,15 @@
 import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 
-export function ProductGallery({ images, imageFit = "contain" }: { images: string[], imageFit?: string }) {
+export function ProductGallery({ 
+  images, 
+  imageFit = "contain",
+  alignments = []
+}: { 
+  images: string[]
+  imageFit?: string
+  alignments?: any[]
+}) {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [position, setPosition] = useState({ x: 50, y: 50 })
   const [isZooming, setIsZooming] = useState(false)
@@ -17,6 +25,10 @@ export function ProductGallery({ images, imageFit = "contain" }: { images: strin
 
   // Fallback para productos sin imagen válida
   const safeImages = images && images.length > 0 ? images : ["/placeholder.jpg"]
+
+  const align = alignments && alignments[currentIndex]
+  const bgSize = align ? `${align.zoom}%` : (imageFit === "cover" ? "cover" : "contain")
+  const bgPosition = align ? `${align.x}% ${align.y}%` : "center"
 
   return (
     <div className="flex flex-col gap-4 h-[500px] w-full">
@@ -39,11 +51,11 @@ export function ProductGallery({ images, imageFit = "contain" }: { images: strin
             }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className={`absolute inset-0 bg-center bg-no-repeat transition-transform ease-out will-change-transform ${
-              imageFit === "cover" ? "bg-cover" : "bg-contain"
-            }`}
+            className="absolute inset-0 bg-no-repeat transition-transform ease-out will-change-transform"
             style={{ 
               backgroundImage: `url(${safeImages[currentIndex]})`,
+              backgroundSize: bgSize,
+              backgroundPosition: bgPosition,
               transformOrigin: isZooming ? `${position.x}% ${position.y}%` : "center center"
             }}
           />
@@ -67,12 +79,21 @@ export function ProductGallery({ images, imageFit = "contain" }: { images: strin
                 index === currentIndex ? "border-primary opacity-100" : "border-transparent opacity-60 hover:opacity-100"
               }`}
             >
-              <div
-                className={`absolute inset-0 bg-center bg-no-repeat ${
-                  imageFit === "cover" ? "bg-cover" : "bg-contain"
-                }`}
-                style={{ backgroundImage: `url(${image})` }}
-              />
+              {(() => {
+                const thumbAlign = alignments && alignments[index]
+                const thumbBgSize = thumbAlign ? `${thumbAlign.zoom}%` : (imageFit === "cover" ? "cover" : "contain")
+                const thumbBgPosition = thumbAlign ? `${thumbAlign.x}% ${thumbAlign.y}%` : "center"
+                return (
+                  <div
+                    className="absolute inset-0 bg-no-repeat"
+                    style={{ 
+                      backgroundImage: `url(${image})`,
+                      backgroundSize: thumbBgSize,
+                      backgroundPosition: thumbBgPosition
+                    }}
+                  />
+                )
+              })()}
             </button>
           ))}
         </div>

@@ -45,6 +45,7 @@ export function ProductCard({ product }: { product: ProductType }) {
   const specs = product.specifications as any
   const variants: string[] | null = (specs && specs.variants && Array.isArray(specs.variants) && specs.variants.length > 0) ? specs.variants : null
   const imageFit = specs?.imageFit || "contain"
+  const alignments = specs?.alignments || []
 
   const isLowStock = product.stock > 0 && product.stock <= 2
   const isRecent = product.createdAt 
@@ -73,17 +74,24 @@ export function ProductCard({ product }: { product: ProductType }) {
       onDragStart={(e) => e.preventDefault()}
     >
       <Link href={`/product/${product.id}`} className="block overflow-hidden relative aspect-square bg-zinc-900">
-        {product.images.map((image: string, index: number) => (
-          <div
-            key={index}
-            className={`absolute inset-0 transition-all duration-700 transform group-hover:scale-105 bg-center bg-no-repeat ${
-              imageFit === "cover" ? "bg-cover" : "bg-contain"
-            } ${
-              index === (isHovered && product.images.length > 1 ? 1 : 0) ? "opacity-100" : "opacity-0"
-            }`}
-            style={{ backgroundImage: `url(${image})` }}
-          />
-        ))}
+        {product.images.map((image: string, index: number) => {
+          const align = alignments[index]
+          const bgSize = align ? `${align.zoom}%` : (imageFit === "cover" ? "cover" : "contain")
+          const bgPosition = align ? `${align.x}% ${align.y}%` : "center"
+          return (
+            <div
+              key={index}
+              className={`absolute inset-0 transition-all duration-700 transform group-hover:scale-105 bg-no-repeat ${
+                index === (isHovered && product.images.length > 1 ? 1 : 0) ? "opacity-100" : "opacity-0"
+              }`}
+              style={{ 
+                backgroundImage: `url(${image})`,
+                backgroundSize: bgSize,
+                backgroundPosition: bgPosition
+              }}
+            />
+          )
+        })}
 
         {/* Anti-Theft Watermark Overlay for Cards */}
         <div 

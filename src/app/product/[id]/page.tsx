@@ -61,6 +61,7 @@ export default async function ProductDetailPage({
               <ProductGallery 
                 images={product.images} 
                 imageFit={(product.specifications as any)?.imageFit || "contain"} 
+                alignments={(product.specifications as any)?.alignments}
               />
             </div>
 

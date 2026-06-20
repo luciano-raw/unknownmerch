@@ -1,9 +1,9 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { createProduct, updateProduct } from "@/actions/products"
 import { useRouter } from "next/navigation"
-import { Image as ImageIcon, Star, Upload, Loader2, Sparkles, CheckCircle2, MousePointerClick } from "lucide-react"
+import { Image as ImageIcon, Star, Upload, Loader2, Sparkles, CheckCircle2, MousePointerClick, Target, RotateCcw } from "lucide-react"
 import { compressImageClientSide } from "@/lib/image"
 
 export function ProductForm({ initialData }: { initialData?: any }) {
@@ -31,6 +31,39 @@ export function ProductForm({ initialData }: { initialData?: any }) {
     }
     return "contain"
   })
+
+  type ImageAlignment = {
+    zoom: number
+    x: number
+    y: number
+  }
+
+  // Parse initial alignments per image index
+  const [alignments, setAlignments] = useState<ImageAlignment[]>(() => {
+    if (initialData?.specifications) {
+      try {
+        const specs = typeof initialData.specifications === 'string' 
+          ? JSON.parse(initialData.specifications) 
+          : initialData.specifications
+        if (specs?.alignments && Array.isArray(specs.alignments)) {
+          return [0, 1, 2].map(idx => ({
+            zoom: specs.alignments[idx]?.zoom ?? 100,
+            x: specs.alignments[idx]?.x ?? 50,
+            y: specs.alignments[idx]?.y ?? 50
+          }))
+        }
+      } catch (e) {}
+    }
+    return [
+      { zoom: 100, x: 50, y: 50 },
+      { zoom: 100, x: 50, y: 50 },
+      { zoom: 100, x: 50, y: 50 }
+    ]
+  })
+  
+  const [activeIndex, setActiveIndex] = useState<number>(0)
+  const [isDraggingPos, setIsDraggingPos] = useState(false)
+  const containerRef = useRef<HTMLDivElement>(null)
   
   const [shippingType, setShippingType] = useState<string>("envio_y_retiro")
   const [shippingLocations, setShippingLocations] = useState<string[]>([])
@@ -38,6 +71,46 @@ export function ProductForm({ initialData }: { initialData?: any }) {
   const [showSuccess, setShowSuccess] = useState(false)
   
   const router = useRouter()
+
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!containerRef.current) return
+    e.preventDefault()
+    setIsDraggingPos(true)
+    e.currentTarget.setPointerCapture(e.pointerId)
+    updateCoordinates(e)
+  }
+
+  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!isDraggingPos) return
+    e.preventDefault()
+    updateCoordinates(e)
+  }
+
+  const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    setIsDraggingPos(false)
+    if (containerRef.current) {
+      try {
+        e.currentTarget.releasePointerCapture(e.pointerId)
+      } catch (err) {}
+    }
+  }
+
+  const updateCoordinates = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!containerRef.current) return
+    const rect = containerRef.current.getBoundingClientRect()
+    const x = ((e.clientX - rect.left) / rect.width) * 100
+    const y = ((e.clientY - rect.top) / rect.height) * 100
+    
+    setAlignments(prev => {
+      const updated = [...prev]
+      updated[activeIndex] = {
+        ...updated[activeIndex],
+        x: Math.max(0, Math.min(100, Math.round(x))),
+        y: Math.max(0, Math.min(100, Math.round(y)))
+      }
+      return updated
+    })
+  }
 
   useEffect(() => {
     if (initialData?.shippingDetails) {
@@ -145,6 +218,19 @@ export function ProductForm({ initialData }: { initialData?: any }) {
       // Save custom image fit configuration
       specsObj.imageFit = imageFit
       
+      // Save custom image alignments matching cover, hover, and remaining order
+      const imageCount = selectedFiles.length > 0 ? selectedFiles.length : existingImages.length
+      const rearrangedAlignments = []
+      rearrangedAlignments[0] = alignments[coverIndex]
+      if (imageCount > 1) {
+        rearrangedAlignments[1] = alignments[hoverIndex]
+      }
+      const remainingAlign = alignments.slice(0, imageCount).filter((_, idx) => idx !== coverIndex && idx !== hoverIndex)[0]
+      if (remainingAlign && imageCount > 2) {
+        rearrangedAlignments[2] = remainingAlign
+      }
+      specsObj.alignments = rearrangedAlignments.slice(0, imageCount).filter(Boolean)
+
       if (variantsText.trim()) {
         specsObj.variants = variantsText.split(",").map(v => v.trim()).filter(Boolean)
       } else {
@@ -219,6 +305,8 @@ export function ProductForm({ initialData }: { initialData?: any }) {
   const inputClasses = "w-full rounded-lg border border-border bg-background/50 text-foreground px-4 py-2.5 outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary focus:bg-background placeholder:text-muted-foreground/60 text-sm"
   const labelClasses = "block text-[11px] font-bold uppercase tracking-wider text-muted-foreground/80 mb-1.5"
   const selectClasses = "w-full rounded-lg border border-border bg-background/50 text-foreground px-4 py-2.5 outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary focus:bg-background text-sm h-11"
+
+  const activeImageUrl = previewUrls.length > 0 ? previewUrls[activeIndex] : existingImages[activeIndex]
 
   return (
     <>
@@ -463,24 +551,37 @@ export function ProductForm({ initialData }: { initialData?: any }) {
               {/* Styled Previews Grid */}
               {(previewUrls.length > 0 || existingImages.length > 0) && (
                 <div className="space-y-2">
-                  <span className={labelClasses}>Distribución y Portada (Estrella = Portada | Puntero = Hover)</span>
+                  <span className={labelClasses}>Distribución y Portada (Haz click en una para editar su encuadre)</span>
                   <div className="grid grid-cols-3 gap-3">
                     {previewUrls.length > 0 
                       ? previewUrls.map((url, index) => {
                           const isCover = index === coverIndex
                           const isHover = index === hoverIndex && previewUrls.length > 1
+                          const align = alignments[index]
+                          const bgSize = align ? `${align.zoom}%` : (imageFit === "cover" ? "cover" : "contain")
+                          const bgPosition = align ? `${align.x}% ${align.y}%` : "center"
                           return (
                             <div 
                               key={url} 
-                              className={`group relative aspect-square rounded-xl overflow-hidden border-2 transition-all duration-300 ${
-                                isCover 
-                                  ? "border-amber-400 ring-2 ring-amber-400/20 scale-[1.03] shadow-lg shadow-amber-400/10" 
-                                  : isHover
-                                    ? "border-indigo-400 ring-2 ring-indigo-400/20 scale-[1.03] shadow-lg shadow-indigo-400/10"
-                                    : "border-border opacity-70 hover:opacity-100"
+                              onClick={() => setActiveIndex(index)}
+                              className={`group relative aspect-square rounded-xl overflow-hidden border-2 transition-all duration-300 cursor-pointer ${
+                                index === activeIndex
+                                  ? "border-primary ring-2 ring-primary/20 scale-[1.03] shadow-lg shadow-primary/10 z-10"
+                                  : isCover 
+                                    ? "border-amber-400/60 opacity-80 hover:opacity-100" 
+                                    : isHover
+                                      ? "border-indigo-400/60 opacity-80 hover:opacity-100"
+                                      : "border-border opacity-60 hover:opacity-100"
                               }`}
                             >
-                              <div className={`absolute inset-0 bg-center bg-no-repeat ${imageFit === "cover" ? "bg-cover" : "bg-contain bg-zinc-900/60"}`} style={{ backgroundImage: `url(${url})` }} />
+                              <div 
+                                className="absolute inset-0 bg-center bg-no-repeat" 
+                                style={{ 
+                                  backgroundImage: `url(${url})`,
+                                  backgroundSize: bgSize,
+                                  backgroundPosition: bgPosition
+                                }} 
+                              />
                               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60 group-hover:opacity-30 transition-opacity" />
                               
                               <div className="absolute top-1.5 right-1.5 flex gap-1 z-20">
@@ -530,18 +631,31 @@ export function ProductForm({ initialData }: { initialData?: any }) {
                       : existingImages.map((url, index) => {
                           const isCover = index === coverIndex
                           const isHover = index === hoverIndex && existingImages.length > 1
+                          const align = alignments[index]
+                          const bgSize = align ? `${align.zoom}%` : (imageFit === "cover" ? "cover" : "contain")
+                          const bgPosition = align ? `${align.x}% ${align.y}%` : "center"
                           return (
                             <div 
                               key={url} 
-                              className={`group relative aspect-square rounded-xl overflow-hidden border-2 transition-all duration-300 ${
-                                isCover 
-                                  ? "border-amber-400 ring-2 ring-amber-400/20 scale-[1.03] shadow-lg shadow-amber-400/10" 
-                                  : isHover
-                                    ? "border-indigo-400 ring-2 ring-indigo-400/20 scale-[1.03] shadow-lg shadow-indigo-400/10"
-                                    : "border-border opacity-70 hover:opacity-100"
+                              onClick={() => setActiveIndex(index)}
+                              className={`group relative aspect-square rounded-xl overflow-hidden border-2 transition-all duration-300 cursor-pointer ${
+                                index === activeIndex
+                                  ? "border-primary ring-2 ring-primary/20 scale-[1.03] shadow-lg shadow-primary/10 z-10"
+                                  : isCover 
+                                    ? "border-amber-400/60 opacity-80 hover:opacity-100" 
+                                    : isHover
+                                      ? "border-indigo-400/60 opacity-80 hover:opacity-100"
+                                      : "border-border opacity-60 hover:opacity-100"
                               }`}
                             >
-                              <div className={`absolute inset-0 bg-center bg-no-repeat ${imageFit === "cover" ? "bg-cover" : "bg-contain bg-zinc-900/60"}`} style={{ backgroundImage: `url(${url})` }} />
+                              <div 
+                                className="absolute inset-0 bg-center bg-no-repeat" 
+                                style={{ 
+                                  backgroundImage: `url(${url})`,
+                                  backgroundSize: bgSize,
+                                  backgroundPosition: bgPosition
+                                }} 
+                              />
                               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60 group-hover:opacity-30 transition-opacity" />
                               
                               <div className="absolute top-1.5 right-1.5 flex gap-1 z-20">
@@ -589,6 +703,184 @@ export function ProductForm({ initialData }: { initialData?: any }) {
                           )
                         })
                     }
+                  </div>
+                </div>
+              )}
+
+              {/* Image Position and Zoom Editor */}
+              {activeImageUrl && alignments[activeIndex] && (
+                <div className="space-y-4 border-t border-border/40 pt-5 mt-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className={labelClasses}>Posición y Zoom (Foto {activeIndex + 1})</span>
+                      <p className="text-[11px] text-muted-foreground/80 normal-case mt-0.5">
+                        Arrastra sobre la foto izquierda para encuadrar y usa el zoom inferior.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAlignments(prev => {
+                          const updated = [...prev]
+                          updated[activeIndex] = { zoom: 100, x: 50, y: 50 }
+                          return updated
+                        })
+                      }}
+                      className="text-xs text-amber-400 hover:text-amber-300 font-bold transition-colors flex items-center gap-1.5"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" />
+                      Restaurar
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
+                    {/* Interactive Selector */}
+                    <div className="flex flex-col">
+                      <div className="w-full text-[10px] text-muted-foreground/70 font-mono tracking-wider mb-1 flex justify-between">
+                        <span>1. ARRASTRA PARA ENFOCAR</span>
+                        <span>{alignments[activeIndex]?.x}% / {alignments[activeIndex]?.y}%</span>
+                      </div>
+                      <div 
+                        ref={containerRef}
+                        onPointerDown={handlePointerDown}
+                        onPointerMove={handlePointerMove}
+                        onPointerUp={handlePointerUp}
+                        onPointerCancel={handlePointerUp}
+                        className="relative w-full rounded-xl overflow-hidden border border-border bg-black/60 cursor-crosshair select-none touch-none flex items-center justify-center min-h-[160px] max-h-[220px] shadow-inner"
+                      >
+                        <img 
+                          src={activeImageUrl} 
+                          alt="Selector de enfoque"
+                          className="max-h-[220px] max-w-full w-auto h-auto select-none pointer-events-none object-contain"
+                        />
+                        
+                        {/* Rule of Thirds Grid Overlay */}
+                        <div className="absolute inset-0 grid grid-cols-3 grid-rows-3 pointer-events-none opacity-20">
+                          <div className="border-r border-b border-dashed border-white" />
+                          <div className="border-r border-b border-dashed border-white" />
+                          <div className="border-b border-dashed border-white" />
+                          <div className="border-r border-b border-dashed border-white" />
+                          <div className="border-r border-b border-dashed border-white" />
+                          <div className="border-b border-dashed border-white" />
+                          <div className="border-r dashed border-white" />
+                          <div className="border-r dashed border-white" />
+                          <div />
+                        </div>
+
+                        {/* Interactive target indicator */}
+                        <div 
+                          className="absolute w-8 h-8 -ml-4 -mt-4 rounded-full border-2 border-amber-400 bg-amber-400/20 shadow-[0_0_12px_rgba(251,191,36,0.85)] pointer-events-none flex items-center justify-center"
+                          style={{ 
+                            left: `${alignments[activeIndex]?.x ?? 50}%`, 
+                            top: `${alignments[activeIndex]?.y ?? 50}%` 
+                          }}
+                        >
+                          <Target className="w-4 h-4 text-amber-400 animate-pulse" />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Square Live Preview */}
+                    <div className="flex flex-col">
+                      <span className="text-[10px] text-muted-foreground/70 font-mono tracking-wider mb-1 block">2. RESULTADO (1:1)</span>
+                      <div className="relative aspect-square w-full max-w-[220px] mx-auto sm:mx-0 rounded-xl overflow-hidden border border-amber-400/30 bg-zinc-900 shadow-md">
+                        <div 
+                          className="absolute inset-0 bg-center bg-no-repeat" 
+                          style={{ 
+                            backgroundImage: `url(${activeImageUrl})`, 
+                            backgroundSize: `${alignments[activeIndex]?.zoom ?? 100}%`,
+                            backgroundPosition: `${alignments[activeIndex]?.x ?? 50}% ${alignments[activeIndex]?.y ?? 50}%` 
+                          }} 
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
+                        <div className="absolute bottom-3 left-3 text-white pointer-events-none w-[90%]">
+                          <p className="text-[9px] font-bold text-amber-400 uppercase tracking-widest">Vista Previa</p>
+                          <p className="text-xs font-bold font-sans truncate tracking-tight uppercase">
+                            {initialData?.name || "PRODUCTO"}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Range sliders for precise calibration */}
+                  <div className="space-y-3 pt-1">
+                    {/* Zoom Slider */}
+                    <div className="space-y-1">
+                      <div className="flex justify-between items-center text-[10px] font-mono tracking-wider text-muted-foreground/85">
+                        <span>ZOOM DE IMAGEN</span>
+                        <span className="font-bold text-foreground">{alignments[activeIndex]?.zoom ?? 100}%</span>
+                      </div>
+                      <input 
+                        type="range" 
+                        min="100" 
+                        max="300" 
+                        value={alignments[activeIndex]?.zoom ?? 100} 
+                        onChange={(e) => {
+                          setAlignments(prev => {
+                            const updated = [...prev]
+                            updated[activeIndex] = {
+                              ...updated[activeIndex],
+                              zoom: parseInt(e.target.value, 10)
+                            }
+                            return updated
+                          })
+                        }}
+                        className="w-full h-1.5 bg-secondary rounded-lg appearance-none cursor-pointer accent-amber-400 focus:outline-none" 
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      {/* X Slider */}
+                      <div className="space-y-1">
+                        <div className="flex justify-between items-center text-[10px] font-mono tracking-wider text-muted-foreground/80">
+                          <span>HORIZONTAL (X)</span>
+                          <span className="font-bold text-foreground">{alignments[activeIndex]?.x ?? 50}%</span>
+                        </div>
+                        <input 
+                          type="range" 
+                          min="0" 
+                          max="100" 
+                          value={alignments[activeIndex]?.x ?? 50} 
+                          onChange={(e) => {
+                            setAlignments(prev => {
+                              const updated = [...prev]
+                              updated[activeIndex] = {
+                                ...updated[activeIndex],
+                                x: parseInt(e.target.value, 10)
+                              }
+                              return updated
+                            })
+                          }}
+                          className="w-full h-1.5 bg-secondary rounded-lg appearance-none cursor-pointer accent-amber-400 focus:outline-none" 
+                        />
+                      </div>
+
+                      {/* Y Slider */}
+                      <div className="space-y-1">
+                        <div className="flex justify-between items-center text-[10px] font-mono tracking-wider text-muted-foreground/80">
+                          <span>VERTICAL (Y)</span>
+                          <span className="font-bold text-foreground">{alignments[activeIndex]?.y ?? 50}%</span>
+                        </div>
+                        <input 
+                          type="range" 
+                          min="0" 
+                          max="100" 
+                          value={alignments[activeIndex]?.y ?? 50} 
+                          onChange={(e) => {
+                            setAlignments(prev => {
+                              const updated = [...prev]
+                              updated[activeIndex] = {
+                                ...updated[activeIndex],
+                                y: parseInt(e.target.value, 10)
+                              }
+                              return updated
+                            })
+                          }}
+                          className="w-full h-1.5 bg-secondary rounded-lg appearance-none cursor-pointer accent-amber-400 focus:outline-none" 
+                        />
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}
