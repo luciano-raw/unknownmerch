@@ -298,8 +298,18 @@ export function ProductForm({ initialData }: { initialData?: any }) {
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     if (loading) return
-    const formData = new FormData(e.currentTarget)
-    handleAction(formData)
+    
+    // Set loading state synchronously to trigger the paint of the loading screen immediately
+    setLoading(true)
+    setLoadingMessage("Preparando datos del producto...")
+    
+    const form = e.currentTarget
+    
+    // Defer the heavy execution to the next frame to prevent blocking Interaction to Next Paint (INP)
+    setTimeout(() => {
+      const formData = new FormData(form)
+      handleAction(formData)
+    }, 50)
   }
 
   const inputClasses = "w-full rounded-lg border border-border bg-background/50 text-foreground px-4 py-2.5 outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary focus:bg-background placeholder:text-muted-foreground/60 text-sm"
