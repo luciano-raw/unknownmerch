@@ -46,6 +46,7 @@ export function ProductCard({ product }: { product: ProductType }) {
   const variants: string[] | null = (specs && specs.variants && Array.isArray(specs.variants) && specs.variants.length > 0) ? specs.variants : null
   const imageFit = specs?.imageFit || "contain"
   const alignments = specs?.alignments || []
+  const isComingSoon = !!specs?.isComingSoon
 
   const isLowStock = product.stock > 0 && product.stock <= 2
   const isRecent = product.createdAt 
@@ -101,17 +102,22 @@ export function ProductCard({ product }: { product: ProductType }) {
         
         {/* Badges Container */}
         <div className="absolute top-3 left-3 z-10 flex flex-col gap-1.5 items-start">
-          {isOutOfStock && (
+          {isComingSoon && (
+            <span className="bg-amber-500/90 backdrop-blur text-black text-[10px] md:text-xs font-bold px-2.5 py-1 rounded-full shadow-sm uppercase tracking-widest border border-amber-400/30 animate-pulse">
+              Pronto
+            </span>
+          )}
+          {!isComingSoon && isOutOfStock && (
             <span className="bg-destructive/95 backdrop-blur text-destructive-foreground text-[10px] md:text-xs font-bold px-2 py-1 rounded-full shadow-sm uppercase tracking-wider">
               Agotado
             </span>
           )}
-          {!isOutOfStock && isLowStock && (
+          {!isComingSoon && !isOutOfStock && isLowStock && (
             <span className="bg-amber-600/95 backdrop-blur text-white text-[10px] md:text-xs font-bold px-2 py-1 rounded-full shadow-sm uppercase tracking-wider">
               Últimas unidades
             </span>
           )}
-          {!isOutOfStock && isRecent && (
+          {!isComingSoon && !isOutOfStock && isRecent && (
             <span className="bg-emerald-600/95 backdrop-blur text-white text-[10px] md:text-xs font-bold px-2 py-1 rounded-full shadow-sm uppercase tracking-wider">
               Nuevo Drop
             </span>
@@ -136,7 +142,7 @@ export function ProductCard({ product }: { product: ProductType }) {
               </span>
             )}
           </div>
-          {!isOutOfStock && (
+          {!isOutOfStock && !isComingSoon && (
             <button 
               onClick={handleDirectBuy}
               className={`flex h-8 w-8 items-center justify-center rounded-full transition-all duration-300 ${

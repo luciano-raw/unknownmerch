@@ -32,6 +32,21 @@ export function ProductForm({ initialData }: { initialData?: any }) {
     return "contain"
   })
 
+  // Parse initial isComingSoon configuration from specifications JSON
+  const [isComingSoon, setIsComingSoon] = useState<boolean>(() => {
+    if (initialData?.specifications) {
+      try {
+        const specs = typeof initialData.specifications === 'string' 
+          ? JSON.parse(initialData.specifications) 
+          : initialData.specifications
+        return !!specs?.isComingSoon
+      } catch (e) {
+        return false
+      }
+    }
+    return false
+  })
+
   type ImageAlignment = {
     zoom: number
     x: number
@@ -217,6 +232,9 @@ export function ProductForm({ initialData }: { initialData?: any }) {
       
       // Save custom image fit configuration
       specsObj.imageFit = imageFit
+      
+      // Save coming soon status
+      specsObj.isComingSoon = isComingSoon
       
       // Save custom image alignments matching cover, hover, and remaining order
       const imageCount = selectedFiles.length > 0 ? selectedFiles.length : existingImages.length
@@ -451,6 +469,23 @@ export function ProductForm({ initialData }: { initialData?: any }) {
                   <option value="cover">Llenar (Expandir/recortar)</option>
                 </select>
               </div>
+            </div>
+
+            <div className="bg-secondary/10 p-4 rounded-xl border border-border/80 flex items-center justify-between">
+              <div className="flex flex-col gap-0.5">
+                <span className="text-xs font-bold text-foreground">Modo Próximo Lanzamiento (Coming Soon)</span>
+                <span className="text-[11px] text-muted-foreground">Muestra el producto con etiqueta "Pronto" y deshabilita la compra.</span>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer select-none">
+                <input 
+                  type="checkbox" 
+                  checked={isComingSoon}
+                  onChange={(e) => setIsComingSoon(e.target.checked)}
+                  disabled={loading}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-zinc-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
+              </label>
             </div>
 
             <div>

@@ -14,6 +14,24 @@ export function AddToCartControls({ product }: { product: ProductType }) {
   const isOutOfStock = product.stock === 0
   const specs = product.specifications as any
   const variants: string[] | null = (specs && specs.variants && Array.isArray(specs.variants) && specs.variants.length > 0) ? specs.variants : null
+  const isComingSoon = !!specs?.isComingSoon
+
+  if (isComingSoon) {
+    return (
+      <div className="flex flex-col gap-4 mt-auto md:mt-10 bg-secondary/10 border border-border/50 p-6 rounded-2xl shadow-inner select-none">
+        <button 
+          disabled
+          className="w-full h-12 flex items-center justify-center gap-2 rounded-lg bg-zinc-800 border border-zinc-700/80 text-muted-foreground font-bold cursor-not-allowed uppercase tracking-wider text-xs"
+        >
+          Próximamente disponible
+        </button>
+        <div className="flex gap-2.5 items-center justify-center text-xs text-amber-500/90 text-center font-medium leading-relaxed px-2">
+          <span>📣</span>
+          <span>Este producto forma parte de nuestro próximo drop. ¡Mantente atento!</span>
+        </div>
+      </div>
+    )
+  }
   
   const [selectedVariant, setSelectedVariant] = useState<string | null>(variants ? null : "")
 
