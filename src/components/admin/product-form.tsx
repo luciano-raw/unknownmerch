@@ -317,15 +317,15 @@ export function ProductForm({ initialData }: { initialData?: any }) {
     e.preventDefault()
     if (loading) return
     
+    // Capture the form data synchronously while the inputs are still active/enabled
+    const formData = new FormData(e.currentTarget)
+    
     // Set loading state synchronously to trigger the paint of the loading screen immediately
     setLoading(true)
     setLoadingMessage("Preparando datos del producto...")
     
-    const form = e.currentTarget
-    
-    // Defer the heavy execution to the next frame to prevent blocking Interaction to Next Paint (INP)
+    // Defer the heavy execution (image compression, Server Action) to prevent blocking Interaction to Next Paint (INP)
     setTimeout(() => {
-      const formData = new FormData(form)
       handleAction(formData)
     }, 50)
   }
