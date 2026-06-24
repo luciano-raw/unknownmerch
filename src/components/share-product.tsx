@@ -47,11 +47,19 @@ export function ShareProduct({ productName, productId }: ShareProductProps) {
 
   const shareWhatsApp = () => {
     const text = encodeURIComponent(`Mira este producto en Unknown Club: ${productName} ${shareUrl}`)
-    window.open(`https://wa.me/?text=${text}`, "_blank")
+    const whatsappUrl = `https://wa.me/?text=${text}`
+    const newWindow = window.open(whatsappUrl, "_blank")
+    if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
+      window.location.href = whatsappUrl
+    }
   }
 
   const shareFacebook = () => {
-    window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`, "_blank")
+    const fbUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`
+    const newWindow = window.open(fbUrl, "_blank")
+    if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
+      window.location.href = fbUrl
+    }
   }
 
   return (

@@ -4,6 +4,9 @@ export function generateWhatsAppLink(items: CartItem[], customerName: string, vi
   // Use the dynamic number if provided, otherwise fallback
   const phoneNumber = contactNumber || "56930531304" 
   
+  // Clean phone number: remove any non-digit character (like '+', spaces, dashes, etc.)
+  const cleanPhoneNumber = phoneNumber.replace(/\D/g, '')
+  
   let message = `¡Hola! 👋 Soy *${customerName}* y quiero confirmar el siguiente pedido:\n\n`
   
   message += `🛍️ *RESUMEN DE MI COMPRA:*\n`
@@ -36,5 +39,5 @@ export function generateWhatsAppLink(items: CartItem[], customerName: string, vi
   message += `Quedo a la espera de las instrucciones para realizar la transferencia y coordinar el envío/retiro. ¡Muchas gracias! ✨`
 
   const encodedMessage = encodeURIComponent(message)
-  return `https://wa.me/${phoneNumber}?text=${encodedMessage}`
+  return `https://api.whatsapp.com/send?phone=${cleanPhoneNumber}&text=${encodedMessage}`
 }

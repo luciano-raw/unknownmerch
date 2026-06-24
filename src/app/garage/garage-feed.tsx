@@ -307,7 +307,11 @@ function VehicleCard({ vehicle, isFeature, isHighlighted, onSelect }: VehicleCar
     const shareUrl = `${window.location.origin}/garage?v=${vehicle.id}`
     const text = `🔥 ¡Mira esta tremenda preparación en *UNKNOWN CLUB*! 🚗\n\n*${vehicle.brand} ${vehicle.model} (${vehicle.year})*\n🛠️ *Suspensión:* ${vehicle.suspension}${vehicle.instagram ? `\n📱 *Instagram:* @${vehicle.instagram.replace('@', '')}` : ''}\n\n👉 Ver fotos y specs completas aquí: ${shareUrl}`
 
-    window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank')
+    const whatsappShareUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`
+    const newWindow = window.open(whatsappShareUrl, '_blank')
+    if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
+      window.location.href = whatsappShareUrl
+    }
     setIsShareOpen(false)
   }
 

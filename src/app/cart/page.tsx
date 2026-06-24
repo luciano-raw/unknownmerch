@@ -56,7 +56,10 @@ export default function CartPage() {
       }
       
       const whatsappUrl = generateWhatsAppLink(items, name, vipDiscount, settings.whatsappNumber)
-      window.open(whatsappUrl, "_blank")
+      const newWindow = window.open(whatsappUrl, "_blank")
+      if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
+        window.location.href = whatsappUrl
+      }
       clearCart()
     } catch (e) {
       alert("Error al procesar el enlace. Intenta nuevamente.")
